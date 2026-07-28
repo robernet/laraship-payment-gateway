@@ -1,0 +1,5 @@
+# Melos workspace — starting point; adjust to your setup.
+name: laraship-clubpago
+packages:
+  - packages/**
+  - apps/**

@@ -1,0 +1,39 @@
+# ---- Secrets (never commit) ----
+/backend/.env
+/backend/auth.json
+*.pem
+*.key
+*.keystore
+*.jks
+**/google-services.json
+**/GoogleService-Info.plist
+
+# ---- Laravel / backend ----
+/backend/vendor/
+/backend/node_modules/
+/backend/storage/*.key
+/backend/.phpunit.cache/
+/backend/.phpunit.result.cache
+/backend/bootstrap/cache/*.php
+
+# ---- Dart / Flutter ----
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+*.iml
+**/ios/Flutter/ephemeral/
+**/macos/Flutter/ephemeral/
+**/Flutter/Generated.xcconfig
+**/Flutter/flutter_export_environment.sh
+
+# ---- IDEs ----
+.idea/
+.vscode/
+
+# ---- Graphify ----
+# Root graphify-out/ is committed on purpose (shared map); stale per-service copies are not:
+/backend/graphify-out/
+
+# ---- Vendored UI kits (re-vendor per project; kept out of git) ----
+/reference/
