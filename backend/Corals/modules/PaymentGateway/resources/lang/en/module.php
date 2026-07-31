@@ -9,4 +9,16 @@ return [
         'title' => 'Payment References',
         'title_singular' => 'Payment Reference',
     ],
+    'transaction' => [
+        'title' => 'Transactions',
+        'title_singular' => 'Transaction',
+    ],
+    'shift' => [
+        'title' => 'Shifts',
+        'title_singular' => 'Shift',
+    ],
+    'report' => [
+        'title' => 'Reports',
+        'title_singular' => 'Report',
+    ],
 ];

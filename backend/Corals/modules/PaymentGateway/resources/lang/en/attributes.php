@@ -16,4 +16,21 @@ return [
         'integration_mode' => 'Integration mode',
         'pay_format_url' => 'Payment slip (PDF)',
     ],
+    'transaction' => [
+        'reference' => 'Reference',
+        'store' => 'Store',
+        'operator' => 'Operator',
+        'amount' => 'Amount (minor units)',
+        'currency' => 'Currency',
+        'status' => 'Status',
+        'collected_at' => 'Collected at',
+    ],
+    'shift' => [
+        'store' => 'Store',
+        'operator' => 'Operator',
+        'opened_at' => 'Opened at',
+        'closed_at' => 'Closed at',
+        'counted_amount_minor' => 'Counted amount (minor units)',
+        'discrepancy_minor' => 'Discrepancy (minor units)',
+    ],
 ];
