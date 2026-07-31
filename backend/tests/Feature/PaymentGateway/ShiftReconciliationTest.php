@@ -86,6 +86,15 @@ class ShiftReconciliationTest extends TestCase
             'reference_layout' => ['identifier_length' => 10],
         ]);
 
+        // Deterministically grant permission to generate payment references,
+        // regardless of DB auto-increment order (isSuperUser() otherwise only
+        // bypasses this for whichever user happens to land on id 1).
+        \Spatie\Permission\Models\Permission::firstOrCreate([
+            'name' => 'PaymentGateway::payment_reference.create',
+            'guard_name' => config('auth.defaults.guard'),
+        ]);
+        $operator->givePermissionTo('PaymentGateway::payment_reference.create');
+
         $token = $this->loginAndOpenShift($store, $operator);
         $headers = ['Authorization' => 'Bearer ' . $token];
 
@@ -149,6 +158,15 @@ class ShiftReconciliationTest extends TestCase
             'sub_id' => 9,
             'reference_layout' => ['identifier_length' => 10],
         ]);
+
+        // Deterministically grant permission to generate payment references,
+        // regardless of DB auto-increment order (isSuperUser() otherwise only
+        // bypasses this for whichever user happens to land on id 1).
+        \Spatie\Permission\Models\Permission::firstOrCreate([
+            'name' => 'PaymentGateway::payment_reference.create',
+            'guard_name' => config('auth.defaults.guard'),
+        ]);
+        $operator->givePermissionTo('PaymentGateway::payment_reference.create');
 
         $token = $this->loginAndOpenShift($store, $operator);
         $headers = ['Authorization' => 'Bearer ' . $token];
