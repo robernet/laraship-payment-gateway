@@ -35,6 +35,12 @@ class ShiftRequest extends BaseRequest
             ]);
         }
 
+        if ($this->isUpdate()) {
+            $rules = array_merge($rules, [
+                'counted_amount' => ['required', 'integer', 'min:0'],
+            ]);
+        }
+
         return $rules;
     }
 }
