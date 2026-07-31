@@ -63,7 +63,9 @@ class ShiftsController extends APIBaseController
     }
 
     /**
-     * Close a shift. Only the operator who opened it may close it.
+     * Close a shift. Only the operator who opened it may close it. Computes
+     * the discrepancy between the operator's counted cash and the sum of the
+     * shift's settled transactions (positive = over, negative = short).
      *
      * @param ShiftRequest $request
      * @param Shift $shift
@@ -75,7 +77,14 @@ class ShiftsController extends APIBaseController
             abort_if($shift->operator_id !== $request->user()->id, 403, 'This shift belongs to a different operator.');
             abort_if(!$shift->isOpen(), 422, 'This shift is already closed.');
 
-            $this->shiftService->update($request, $shift, ['closed_at' => now()]);
+            $collectedMinor = (int) $shift->transactions()->sum('amount_minor');
+            $countedMinor = (int) $request->get('counted_amount');
+
+            $this->shiftService->update($request, $shift, [
+                'closed_at' => now(),
+                'counted_amount_minor' => $countedMinor,
+                'discrepancy_minor' => $countedMinor - $collectedMinor,
+            ]);
 
             return apiResponse($this->shiftService->getModelDetails(), trans('Corals::messages.success.updated', ['item' => 'shift']));
         } catch (\Exception $exception) {
