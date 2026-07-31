@@ -50,7 +50,10 @@ class ShiftReconciliationTest extends TestCase
         return '/api/' . config('corals.api_version') . '/' . ltrim($path, '/');
     }
 
-    private function loginAndOpenShift(Store $store, User $operator): string
+    /**
+     * @return array{token: string, shift_id: string}
+     */
+    private function loginAndOpenShift(Store $store, User $operator): array
     {
         $login = $this->postJson($this->apiUrl('pos/login'), [
             'email' => $operator->email,
@@ -60,11 +63,14 @@ class ShiftReconciliationTest extends TestCase
         $login->assertStatus(200);
         $token = $login->json('data.token');
 
-        $this->withHeaders(['Authorization' => 'Bearer ' . $token])
-            ->postJson($this->apiUrl('shifts'), ['store_id' => $store->getHashedIdAttribute()])
-            ->assertStatus(200);
+        $openShift = $this->withHeaders(['Authorization' => 'Bearer ' . $token])
+            ->postJson($this->apiUrl('shifts'), ['store_id' => $store->getHashedIdAttribute()]);
+        $openShift->assertStatus(200);
 
-        return $token;
+        return [
+            'token' => $token,
+            'shift_id' => $openShift->json('data.id'),
+        ];
     }
 
     #[Test]
@@ -95,7 +101,9 @@ class ShiftReconciliationTest extends TestCase
         ]);
         $operator->givePermissionTo('PaymentGateway::payment_reference.create');
 
-        $token = $this->loginAndOpenShift($store, $operator);
+        $opened = $this->loginAndOpenShift($store, $operator);
+        $token = $opened['token'];
+        $shiftHashid = $opened['shift_id'];
         $headers = ['Authorization' => 'Bearer ' . $token];
 
         $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
@@ -112,20 +120,8 @@ class ShiftReconciliationTest extends TestCase
             'currency' => 'MXN',
         ])->assertStatus(200);
 
-        $shiftHashid = $this->withHeaders($headers)
-            ->postJson($this->apiUrl('shifts'), ['store_id' => $store->getHashedIdAttribute()])
-            ->json('data.id');
-
-        // The above re-opens a shift because Task's flow already has one open from loginAndOpenShift -
-        // instead close the shift actually holding the transaction: fetch it directly.
-        $openShift = \Corals\Modules\PaymentGateway\Models\Shift::query()
-            ->where('operator_id', $operator->id)
-            ->whereNull('closed_at')
-            ->latest('opened_at')
-            ->first();
-
         $close = $this->withHeaders($headers)->patchJson(
-            $this->apiUrl('shifts/' . $openShift->getHashedIdAttribute()),
+            $this->apiUrl('shifts/' . $shiftHashid),
             ['counted_amount' => 15000]
         );
 
@@ -134,7 +130,7 @@ class ShiftReconciliationTest extends TestCase
         $this->assertSame(-230, $close->json('data.discrepancy_minor'));
 
         $this->assertDatabaseHas('paymentgateway_shifts', [
-            'id' => $openShift->id,
+            'id' => \Corals\Modules\PaymentGateway\Models\Shift::findByHash($shiftHashid)->id,
             'counted_amount_minor' => 15000,
             'discrepancy_minor' => -230,
         ]);
@@ -168,7 +164,9 @@ class ShiftReconciliationTest extends TestCase
         ]);
         $operator->givePermissionTo('PaymentGateway::payment_reference.create');
 
-        $token = $this->loginAndOpenShift($store, $operator);
+        $opened = $this->loginAndOpenShift($store, $operator);
+        $token = $opened['token'];
+        $shiftHashid = $opened['shift_id'];
         $headers = ['Authorization' => 'Bearer ' . $token];
 
         $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
@@ -183,14 +181,8 @@ class ShiftReconciliationTest extends TestCase
             'currency' => 'MXN',
         ])->assertStatus(200);
 
-        $openShift = \Corals\Modules\PaymentGateway\Models\Shift::query()
-            ->where('operator_id', $operator->id)
-            ->whereNull('closed_at')
-            ->latest('opened_at')
-            ->first();
-
         $close = $this->withHeaders($headers)->patchJson(
-            $this->apiUrl('shifts/' . $openShift->getHashedIdAttribute()),
+            $this->apiUrl('shifts/' . $shiftHashid),
             ['counted_amount' => 5000]
         );
 
