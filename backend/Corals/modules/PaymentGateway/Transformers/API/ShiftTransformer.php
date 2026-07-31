@@ -20,6 +20,8 @@ class ShiftTransformer extends APIBaseTransformer
             'operator_id' => $shift->operator?->id,
             'opened_at' => format_date($shift->opened_at),
             'closed_at' => $shift->closed_at ? format_date($shift->closed_at) : null,
+            'counted_amount_minor' => $shift->counted_amount_minor,
+            'discrepancy_minor' => $shift->discrepancy_minor,
             'created_at' => format_date($shift->created_at),
             'updated_at' => format_date($shift->updated_at),
         ];

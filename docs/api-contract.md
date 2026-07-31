@@ -98,10 +98,12 @@ Codes: `422` validation, `401` auth, `403` forbidden, `404` not found, `500` ser
 
 ### Shift
 - `POST /shifts` (open) — `{store_id}`. Requires the operator's token to carry a `store:{hashid}` ability matching this store (`403` otherwise).
-- `PATCH /shifts/{hashid}` (close) — only the operator who opened it may close it.
+- `PATCH /shifts/{hashid}` (close) — only the operator who opened it may close it. Body: `{counted_amount}` (int, minor units, required) — the cash the operator counted; the server computes and stores `discrepancy_minor` against the shift's actual collected total.
 - Fields:
   - `id` (hashid, string)
   - `store_id` (hashid, string)
   - `operator_id` (hashid, string)
   - `opened_at` (datetime)
   - `closed_at` (datetime, nullable)
+  - `counted_amount_minor` (int, minor units, nullable) — cash counted by the operator at close time, set on `PATCH /shifts/{hashid}`
+  - `discrepancy_minor` (int, minor units, nullable) — `counted_amount_minor` minus the sum of the shift's collected transactions; positive = over, negative = short, `0` = exact. Computed server-side, never client-supplied.
