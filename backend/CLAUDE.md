@@ -1,8 +1,8 @@
 @AGENTS.md
 
-# CLAUDE.md — Laraship project template
+# CLAUDE.md — PaymentGateway (backend)
 
-> **Placement.** Use as the repository-root `CLAUDE.md` for a Laraship monolith (backend + built-in Vue admin in one repo). For a decoupled client (Flutter / SPA), move this file to `/backend/CLAUDE.md`, keep a thin root `CLAUDE.md` that imports `@AGENTS.md` and `@docs/api-contract.md`, and add `/frontend/CLAUDE.md` for the client.
+> **This is the backend file** of a decoupled monorepo: Laraship API + admin here, the Flutter `pos` app under `apps/pos/`. The API contract at `@docs/api-contract.md` governs the boundary.
 >
 > **The `@AGENTS.md` import above** pulls in the Laravel Boost baseline (package versions, Boost tools, PHP / Laravel / PHPUnit rules). Boost owns and regenerates that file — never hand-edit it; put durable rules here instead. Anything below this line overrides the baseline on conflict.
 
@@ -73,25 +73,53 @@ $value = Filters::do_filter('hook', $value, ...$extra);
 Themes live in `resources/themes/{theme}/`; the `Theme` facade resolves view paths so any view can be overridden; each theme has a `theme.json`. The admin theme is DB-configurable per session.
 
 ### Admin / Web frontend (Laraship built-in)
-The server-rendered admin UI — **distinct from any decoupled client app**: Vue 2 + Vuex 3, Bootstrap 4 + jQuery 3, laravel-echo + socket.io for realtime, axios for HTTP. Entry points declared in `webpack.mix.js`.
+The server-rendered admin UI — **distinct from the decoupled `pos` app**: Vue 2 + Vuex 3, Bootstrap 4 + jQuery 3, laravel-echo + socket.io for realtime, axios for HTTP. Entry points declared in `webpack.mix.js`.
 
 ### Identifiers — Hashids (project default)
 - Public URLs and every API payload use a **Hashid string** derived from the internal BIGINT primary key. The raw integer PK never crosses the API boundary — not in URLs, payloads, logs, or errors.
 - Encode / decode with the framework helper: `hashids()->encode($id)` / `hashids()->decode($hash)`.
 - Route binding: decode the hashid to the integer id — via a model `resolveRouteBinding()` override or in the controller — following the pattern in existing modules.
 - Transformers emit the hashid as the resource's `id`, never the raw integer.
-
-> **UUID exception.** Switch to a UUID + BIGINT dual key only for a module that needs globally-unique, client- or offline-generatable ids (sync, idempotent creates, multi-source writes). That is a per-module exception, not the template default.
+- NOTE: the **payment Reference** below is a domain identifier (the ClubPago number), NOT the API `id`. API routes still address resources by Hashid; the Reference is a field.
 
 ### API conventions
 - Fractal transformers for output; API versioning under `/api/v1` (follow existing routes if they differ).
-- Auth: **Laravel Sanctum** personal access tokens — see `docs/api-contract.md` when a decoupled client exists.
+- Auth: **Laravel Sanctum** personal access tokens — see `docs/api-contract.md`.
 
 ---
 
-## Project-specific — fill in per project
-- **Project:** <name>
-- **Primary module(s):** `Corals\Modules\<Module>`  *(confirm namespace casing against the `Corals/modules/` directory)*
-- **Main models:** <Model, Model>
-- **Decoupled client?** <none | Flutter | SPA> -> if yes, this file lives at `/backend/CLAUDE.md` and the API contract governs the boundary.
-- **Identifier scheme:** Hashids (default) — list any module that opts into the UUID exception.
+## Project-specific
+- **Project:** PaymentGateway
+- **Primary module(s):** `Corals\Modules\PaymentGateway`
+- **Main models:** Store, Issuer, PaymentReference, Transaction, Shift
+- **Decoupled client?** Flutter — the `pos` app (operator terminal). This file governs the API side; `docs/api-contract.md` governs the boundary.
+- **Identifier scheme:** Hashids (default) — no UUID exceptions.
+
+---
+
+## Implementation Guide — Payment Reference (ClubPago model)
+
+This backend reimplements ClubPago's *Generador de Referencias* (cash-payment network). An **Issuer** (Emisor — a merchant on the platform) creates payment **References**; the end **Customer** pays them in cash at retail chains (Soriana, Walmart…), by SPEI (CLABE), or by card link. Admin panel manages issuers/references; the `pos` app is a point-of-sale (PDV) collecting against a reference.
+
+**Reference** — numeric string, **max 29 digits**:
+`PREFIX(777) + SUB_ID(3 = issuer) + IDENTIFIER(customer/payment id [+ optional amount] [+ optional due date], left-zero-padded to the issuer's defined length) + DV(1)`
+- First 6 digits (`777` + SUB_ID) identify the issuer; last digit is the check digit. This value will be stored in the Gayeway section of the Settings.
+- The `777` is a 3 digit gateway identifier that will be stored in the Gateway section of Settings.
+- **DV = Mod10 / Luhn** over the preceding digits — catches miskeyed manual entry.
+- Each issuer **defines its reference layout** (which fields, what lengths) at setup; the platform stores that spec and validates against it.
+- **Amount embedded → payment must match exactly; omitted → informational, and partial/overdue payments are accepted.** Same for **due date**: embed only to reject late payment. Amounts are integer **minor units** (152.30 → `15230`), consistent with the API contract's money rule.
+
+**Integration modes.** *Batch*: the reference must embed exact amount + due date for validation. *Online*: the platform validates amount/validity in real time, so the reference can carry just the customer id.
+
+**Generator API** (base QA `https://qa.gateway.site`; auth first, then 3 methods):
+- base QA value will be stored in the Gayeway section of the Settings.
+- `POST /auth/api/auth` `{User, Pswd}` → `{Message, Token (JWT), Expiration}`. Send `Authorization: Bearer <token>`; `401` on missing/invalid/expired → re-authenticate.
+- Methods: **reference**, **barcode** (`/referencegenerator/svc/generator/barcode`, PNG), **pay format** (`/referencegenerator/svc/generator/payformat`, PDF slip). Same request body for all three:
+  - required: `Description`, `Amount` (>0), `Account` (customer id)
+  - optional: `CustomerEmail`, `CustomerName`, `ExpirationDate` (`null` if unused), `RequestClabe` (SPEI CLABE), `RequestPayTD` (card-payment URL), `RequestMSI` (csv of 3/6/9/12), `RequestTDAutoPay` (+ `PaymentNumber`, `Paymentfrequency` required when true)
+  - response: `Reference`, `BarCode` (url), `PayFormat` (url), `Clabe`, `PaymentTD` (url), `Folio`, `Date`, `Message`, `Error`
+- SLA target: 99% uptime, ≤5 s per call.
+
+**Card options** (`RequestPayTD`): **MSI** interest-free months 3/6/9/12 (per-period minimums), and **AutoPay** recurring charges — customer must authorize, 3D Secure, N charges every M days (`99` = indefinite), 3 retries 48 h apart, cancellable. Mexico cards only.
+
+**Model mapping.** Issuer = Emisor · PaymentReference = the reference + its layout spec · Transaction = a received/settled payment · Store = PDV · Shift = operator cash session.

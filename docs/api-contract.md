@@ -50,3 +50,58 @@ Codes: `422` validation, `401` auth, `403` forbidden, `404` not found, `500` ser
   - `id` (hashid, string)
   - `<field>` (`<type>`)
   - `<relation>_id` (hashid, string)
+
+---
+
+## PaymentGateway resources (Phase 1 + Phase 2)
+
+### Auth (POS)
+- `POST /pos/login` — `{email, password, store_id}` → `{token, abilities, store_id}`. Issues a Sanctum token scoped to one store: abilities `payment:lookup`, `payment:collect`, `transaction:read-own`, `shift:manage`, plus a synthetic `store:{hashid}` ability checked on shift-open. `store_id` must be a store the operator is assigned to (`422` otherwise).
+
+### Issuer
+- `GET/POST /issuers` · `GET/PATCH/DELETE /issuers/{hashid}`
+- Fields:
+  - `id` (hashid, string)
+  - `name` (string)
+  - `sub_id` (int, 0-999, unique) — issuer identifier embedded in the reference prefix
+  - `reference_layout` (object): `identifier_length` (int, required), `amount_length` (int, optional — presence makes this issuer batch-mode for amount), `embed_due_date` (bool, optional — presence makes this issuer batch-mode for due date)
+  - `reject_late_payment` (bool) — when true and a reference's `due_date` has passed, collection is rejected (`422`); when false, overdue references remain collectible (due date is informational only)
+
+### PaymentReference
+- `POST /payment-references` (generate) — `{issuer_id, customer_id, amount?, currency?, due_date?}`. `amount`/`due_date` are **required** if the issuer's `reference_layout` declares `amount_length`/`embed_due_date` respectively (validated at generation time, not by a client-chosen mode). Synchronously renders the barcode + pay-format artifacts before responding — no polling, no `artifacts_status` field (see Phase 3 note below).
+- `GET /payment-references/lookup/{reference}` — POS lookup by the raw Reference **string**, not the hashid.
+- Fields:
+  - `id` (hashid, string)
+  - `reference` (string) — the domain Reference, max 29 digits
+  - `issuer_id` (hashid, string)
+  - `integration_mode` (`online`|`batch`) — server-derived from the issuer's layout, never client-supplied
+  - `status` (`pending`|`collected`)
+  - `amount` (int, minor units, nullable)
+  - `currency` (string, nullable)
+  - `due_date` (date, nullable)
+  - `folio` (string) — internally-generated tracking id, format `FOL-YYYYMMDD-XXXXXX`
+  - `barcode_url` (string) — public URL to a Code 128 PNG barcode of the reference
+  - `pay_format_url` (string) — public URL to a rendered payment-slip PDF
+- Collection-time behavior (enforced on `POST /transactions`, not a field): if `amount` is set on the reference, the collected amount must match **exactly** (`422` otherwise); if unset, any positive amount is accepted (partial or full). If `due_date` has passed and the issuer's `reject_late_payment` is true, collection is rejected (`422`).
+- **Authorization** (Phase 3): non-admin callers must be linked to the target issuer via `paymentgateway_issuer_users` (`403` otherwise) — we are the Reference Generator service, offered to issuers directly, not just admins. `clabe` and a legacy JWT/User-Pswd issuer-auth surface (for existing ClubPago-integrated issuers) are deliberately **not** implemented yet — see `docs/roadmap.md` for the open questions this raised.
+
+### Transaction
+- `POST /transactions` (collect) — `{payment_reference_id, amount, currency}`. The shift is always the requesting operator's own currently-open shift — never client-supplied.
+- Fields:
+  - `id` (hashid, string)
+  - `payment_reference_id` (hashid, string)
+  - `shift_id` (hashid, string)
+  - `amount` (int, minor units)
+  - `currency` (string)
+  - `collected_at` (datetime)
+  - `status` (string)
+
+### Shift
+- `POST /shifts` (open) — `{store_id}`. Requires the operator's token to carry a `store:{hashid}` ability matching this store (`403` otherwise).
+- `PATCH /shifts/{hashid}` (close) — only the operator who opened it may close it.
+- Fields:
+  - `id` (hashid, string)
+  - `store_id` (hashid, string)
+  - `operator_id` (hashid, string)
+  - `opened_at` (datetime)
+  - `closed_at` (datetime, nullable)

@@ -1,0 +1,18 @@
+name: clubpago_workspace          # <project>_workspace
+publish_to: none
+environment:
+  sdk: ^3.12.0
+
+workspace:
+  - packages/core
+  - apps/pos
+  # add each Dart app here as you create it
+
+dev_dependencies:
+  melos: ^7.0.0
+
+melos:
+  command:
+    bootstrap:
+      hooks:
+        post: dart run build_runner build --delete-conflicting-outputs

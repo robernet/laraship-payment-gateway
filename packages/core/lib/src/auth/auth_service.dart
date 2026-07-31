@@ -5,9 +5,8 @@ import 'token_store.dart';
 /// `createToken`); we store the returned plain-text token and attach it to
 /// every request. Logout revokes it server-side, then clears local storage.
 class AuthService {
-  AuthService({required ApiClient api, required TokenStore tokens})
-      : _api = api,
-        _tokens = tokens;
+  AuthService({required this._api, required TokenStore tokens})
+    : _tokens = tokens;
 
   final ApiClient _api;
   final TokenStore _tokens;
@@ -18,10 +17,10 @@ class AuthService {
   /// Adjust the path/field to your Laraship auth route — commonly `/login`
   /// with the token at `data.token`.
   Future<void> login({required String email, required String password}) async {
-    final res = await _api.raw.post('/login', data: {
-      'email': email,
-      'password': password,
-    });
+    final res = await _api.raw.post(
+      '/login',
+      data: {'email': email, 'password': password},
+    );
     final token = _extractToken(res.data);
     if (token == null) {
       throw StateError('Login response did not contain a token');
@@ -41,7 +40,8 @@ class AuthService {
   String? _extractToken(Object? body) {
     if (body is Map) {
       final data = body['data'];
-      if (data is Map && data['token'] is String) return data['token'] as String;
+      if (data is Map && data['token'] is String)
+        return data['token'] as String;
       if (body['token'] is String) return body['token'] as String;
     }
     return null;

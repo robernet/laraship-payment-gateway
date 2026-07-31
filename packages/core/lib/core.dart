@@ -1,7 +1,7 @@
 /// Shared client, auth, and models for every app in this workspace.
 ///
 /// Usage in an app:  import 'package:core/core.dart';
-library core;
+library;
 
 export 'src/network/api_client.dart';
 export 'src/network/api_exception.dart';

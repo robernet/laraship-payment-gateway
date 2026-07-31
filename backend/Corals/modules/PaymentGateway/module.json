@@ -1,0 +1,16 @@
+{
+    "code": "corals-paymentgateway",
+    "name": "PaymentGateway Module",
+    "author": "Corals",
+    "type": "module",
+    "description": "Starter Package",
+    "namespace": "Corals\\Modules\\PaymentGateway\\",
+    "provider": "Corals\\Modules\\PaymentGateway\\PaymentGatewayServiceProvider",
+    "version": "1.0",
+    "load_order": "0",
+    "folder": "PaymentGateway",
+    "autoload": "psr-4",
+    "icon": "fa fa-clone",
+    "require": {
+    }
+}
