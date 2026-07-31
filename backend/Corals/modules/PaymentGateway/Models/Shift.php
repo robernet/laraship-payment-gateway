@@ -22,6 +22,8 @@ class Shift extends BaseModel
         'properties' => 'json',
         'opened_at' => 'datetime',
         'closed_at' => 'datetime',
+        'counted_amount_minor' => 'integer',
+        'discrepancy_minor' => 'integer',
     ];
 
     protected $table = 'paymentgateway_shifts';
