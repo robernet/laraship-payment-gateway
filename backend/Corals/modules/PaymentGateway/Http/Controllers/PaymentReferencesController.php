@@ -6,6 +6,7 @@ use Corals\Foundation\Http\Controllers\BaseController;
 use Corals\Modules\PaymentGateway\Classes\BarcodeGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\PayFormatGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\ReferenceGeneratorService;
+use Corals\Modules\PaymentGateway\DataTables\PaymentReferencesDataTable;
 use Corals\Modules\PaymentGateway\Http\Requests\PaymentReferenceRequest;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
@@ -27,6 +28,16 @@ class PaymentReferencesController extends BaseController
         $this->title_singular = trans('PaymentGateway::module.payment_reference.title_singular');
 
         parent::__construct();
+    }
+
+    /**
+     * @param PaymentReferenceRequest $request
+     * @param PaymentReferencesDataTable $dataTable
+     * @return mixed
+     */
+    public function index(PaymentReferenceRequest $request, PaymentReferencesDataTable $dataTable)
+    {
+        return $dataTable->render('PaymentGateway::payment_references.index');
     }
 
     /**
