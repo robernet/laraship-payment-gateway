@@ -3,7 +3,6 @@
 namespace Corals\Menu\Models;
 
 use Corals\Foundation\Models\BaseModel;
-use Corals\Foundation\Traits\Cache\Cachable;
 use Corals\Foundation\Traits\ModelPropertiesTrait;
 use Corals\Foundation\Traits\Node\SimpleNode;
 use Corals\Foundation\Transformers\PresentableTrait;
@@ -11,7 +10,7 @@ use Spatie\Permission\Traits\HasPermissions;
 
 class Menu extends BaseModel
 {
-    use PresentableTrait, SimpleNode, Cachable, ModelPropertiesTrait, HasPermissions;
+    use PresentableTrait, SimpleNode, ModelPropertiesTrait, HasPermissions;
 
     protected $orderField = 'order';
 
