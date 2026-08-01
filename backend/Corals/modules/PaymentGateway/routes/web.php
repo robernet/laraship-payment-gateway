@@ -7,4 +7,5 @@ Route::group(['prefix' => ''], function () {
     Route::resource('payment-references', 'PaymentReferencesController')->only(['index', 'create', 'store', 'show']);
     Route::resource('transactions', 'TransactionsController')->only(['index', 'show']);
     Route::resource('shifts', 'ShiftsController')->only(['index', 'show']);
+    Route::get('reports', 'ReportController@index')->name('paymentgateway.reports.index');
 });

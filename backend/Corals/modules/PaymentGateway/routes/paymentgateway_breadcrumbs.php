@@ -53,3 +53,9 @@ Breadcrumbs::register('paymentgateway_shift_show', function ($breadcrumbs) {
     $breadcrumbs->parent('paymentgateway_shifts');
     $breadcrumbs->push(view()->shared('title_singular'));
 });
+
+//Report
+Breadcrumbs::register('paymentgateway_reports', function ($breadcrumbs) {
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('PaymentGateway::module.report.title'), url('reports'));
+});
