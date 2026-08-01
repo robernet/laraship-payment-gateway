@@ -10,7 +10,7 @@ The read-only **reference / resources provider** for this app — a source to bo
 - Name: DevKit
 - Source: https://codecanyon.net/item/devkit-flutter-ui-kit/29711710
 - Vendored path (read-only, out of build): `reference/devkit/`  (Claude scans `reference/devkit/lib`)
-- License: <confirm the license covers this app's commercial use>
+- License: eff42d2b-7647-4b5e-ab44-c02313b63241
 
 ## Rules
 - Reference / library model: keep this app's own architecture (Riverpod, Dio, freezed). Never import the kit's Bloc/Cubit or any `package:devkit/...`.
