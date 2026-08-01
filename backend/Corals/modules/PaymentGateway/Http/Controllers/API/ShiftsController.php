@@ -67,6 +67,11 @@ class ShiftsController extends APIBaseController
      * the discrepancy between the operator's counted cash and the sum of the
      * shift's settled transactions (positive = over, negative = short).
      *
+     * Assumes all of a shift's transactions share a single currency — nothing
+     * currently enforces this (a pre-existing Phase 2 gap), so a mixed-currency
+     * shift would sum `amount_minor` across currencies meaninglessly. Not fixed
+     * in this phase.
+     *
      * @param ShiftRequest $request
      * @param Shift $shift
      * @return \Illuminate\Http\JsonResponse

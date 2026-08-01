@@ -106,4 +106,4 @@ Codes: `422` validation, `401` auth, `403` forbidden, `404` not found, `500` ser
   - `opened_at` (datetime)
   - `closed_at` (datetime, nullable)
   - `counted_amount_minor` (int, minor units, nullable) — cash counted by the operator at close time, set on `PATCH /shifts/{hashid}`
-  - `discrepancy_minor` (int, minor units, nullable) — `counted_amount_minor` minus the sum of the shift's collected transactions; positive = over, negative = short, `0` = exact. Computed server-side, never client-supplied.
+  - `discrepancy_minor` (int, minor units, nullable) — `counted_amount_minor` minus the sum of the shift's collected transactions; positive = over, negative = short, `0` = exact. Computed server-side, never client-supplied. Assumes all of a shift's transactions share a single currency — nothing currently enforces this, so a mixed-currency shift would sum meaninglessly (pre-existing Phase 2 gap, not fixed here).

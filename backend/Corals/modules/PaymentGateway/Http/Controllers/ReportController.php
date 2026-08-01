@@ -33,6 +33,12 @@ class ReportController extends BaseController
         return view('PaymentGateway::reports.index')->with(compact('issuerTotals', 'storeTotals', 'from', 'to'));
     }
 
+    /**
+     * Both totals below sum `amount_minor` across all matching transactions
+     * assuming a single currency; nothing currently enforces one currency per
+     * issuer/store, so mixed-currency data would produce a meaningless sum
+     * (pre-existing Phase 2 gap, not fixed here).
+     */
     private function issuerTotals(?string $from, ?string $to)
     {
         return DB::table('paymentgateway_transactions')

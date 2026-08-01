@@ -14,11 +14,11 @@
 @section('content')
     @component('components.box')
         <form method="GET" action="{{ url('reports') }}" class="form-inline mb-3">
-            <label class="mr-2">{{ trans('Corals::labels.from') }}</label>
+            <label class="mr-2">{{ trans('PaymentGateway::labels.from') }}</label>
             <input type="date" name="from" value="{{ $from }}" class="form-control mr-3">
-            <label class="mr-2">{{ trans('Corals::labels.to') }}</label>
+            <label class="mr-2">{{ trans('PaymentGateway::labels.to') }}</label>
             <input type="date" name="to" value="{{ $to }}" class="form-control mr-3">
-            <button type="submit" class="btn btn-primary">{{ trans('Corals::labels.filter') }}</button>
+            <button type="submit" class="btn btn-primary">{{ trans('PaymentGateway::labels.filter') }}</button>
         </form>
     @endcomponent
 
