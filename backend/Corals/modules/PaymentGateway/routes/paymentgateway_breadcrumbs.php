@@ -31,3 +31,14 @@ Breadcrumbs::register('paymentgateway_payment_reference_show', function ($breadc
     $breadcrumbs->parent('paymentgateway_payment_references');
     $breadcrumbs->push(view()->shared('title_singular'));
 });
+
+//Transaction
+Breadcrumbs::register('paymentgateway_transactions', function ($breadcrumbs) {
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('PaymentGateway::module.transaction.title'), url(config('paymentgateway.models.transaction.resource_url')));
+});
+
+Breadcrumbs::register('paymentgateway_transaction_show', function ($breadcrumbs) {
+    $breadcrumbs->parent('paymentgateway_transactions');
+    $breadcrumbs->push(view()->shared('title_singular'));
+});
