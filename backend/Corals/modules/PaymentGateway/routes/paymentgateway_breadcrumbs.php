@@ -42,3 +42,14 @@ Breadcrumbs::register('paymentgateway_transaction_show', function ($breadcrumbs)
     $breadcrumbs->parent('paymentgateway_transactions');
     $breadcrumbs->push(view()->shared('title_singular'));
 });
+
+//Shift
+Breadcrumbs::register('paymentgateway_shifts', function ($breadcrumbs) {
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('PaymentGateway::module.shift.title'), url(config('paymentgateway.models.shift.resource_url')));
+});
+
+Breadcrumbs::register('paymentgateway_shift_show', function ($breadcrumbs) {
+    $breadcrumbs->parent('paymentgateway_shifts');
+    $breadcrumbs->push(view()->shared('title_singular'));
+});
