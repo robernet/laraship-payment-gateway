@@ -102,12 +102,18 @@ return [
     | Cache Serializable Classes
     |--------------------------------------------------------------------------
     |
-    | List PHP classes that are allowed to be unserialized from cache. Set to
-    | false to allow all (Laravel 12 behavior), or an array of class names to
-    | restrict deserialization and protect against gadget chain attacks.
+    | List PHP classes that are allowed to be unserialized from cache. The
+    | stores here (DatabaseStore, FileStore, etc.) pass this straight to
+    | PHP's unserialize(..., ['allowed_classes' => ...]) whenever it is not
+    | null — and PHP's `false` there means "reject every object", not
+    | "allow all" as an earlier version of this comment claimed. That
+    | mismatch turned every cached Collection/Eloquent model/stdClass into
+    | __PHP_Incomplete_Class on read (see Modules::getModulesSettings()).
+    | Use null (unrestricted, matches this app's actual cache usage) or an
+    | array of class names to restrict deserialization.
     |
     */
 
-    'serializable_classes' => false,
+    'serializable_classes' => null,
 
 ];
