@@ -8,7 +8,6 @@ use Corals\Modules\PaymentGateway\Classes\PayFormatGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\ReferenceGeneratorService;
 use Corals\Modules\PaymentGateway\Http\Requests\PaymentReferenceRequest;
 use Corals\Modules\PaymentGateway\Models\Issuer;
-use Corals\Modules\PaymentGateway\Models\IssuerUser;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
 use Corals\Modules\PaymentGateway\Services\PaymentReferenceService;
 use Corals\Modules\PaymentGateway\Transformers\API\PaymentReferencePresenter;
@@ -56,14 +55,7 @@ class PaymentReferencesController extends APIBaseController
 
             $user = $request->user();
 
-            if (!isSuperUser($user) && !$user->hasPermissionTo('PaymentGateway::payment_reference.create')) {
-                $isLinkedIssuer = IssuerUser::query()
-                    ->where('user_id', $user->id)
-                    ->where('issuer_id', $issuer->id)
-                    ->exists();
-
-                abort_if(!$isLinkedIssuer, 403, 'This user is not linked to the requested issuer.');
-            }
+            abort_if(!$issuer->isAccessibleBy($user), 403, 'This user is not linked to the requested issuer.');
 
             $paymentReference = $this->paymentReferenceService->generateWithArtifacts(
                 $issuer,

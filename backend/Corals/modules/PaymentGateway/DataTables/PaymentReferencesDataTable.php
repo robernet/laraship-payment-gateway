@@ -3,6 +3,7 @@
 namespace Corals\Modules\PaymentGateway\DataTables;
 
 use Corals\Foundation\DataTables\BaseDataTable;
+use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
 use Corals\Modules\PaymentGateway\Transformers\PaymentReferenceTransformer;
 use Yajra\DataTables\EloquentDataTable;
@@ -28,7 +29,15 @@ class PaymentReferencesDataTable extends BaseDataTable
      */
     public function query(PaymentReference $model)
     {
-        return $model->newQuery()->with('issuer');
+        $query = $model->newQuery()->with('issuer');
+
+        $user = $this->request->user();
+
+        if (!Issuer::isAdminUser($user)) {
+            $query->whereIn('issuer_id', Issuer::accessibleBy($user)->pluck('id'));
+        }
+
+        return $query;
     }
 
     /**

@@ -34,6 +34,21 @@ class PaymentReferenceRequest extends BaseRequest
     }
 
     /**
+     * The web create form submits a decimal peso amount as amount_input
+     * (e.g. "150.00") - convert it to the minor-units amount field the shared
+     * rules/service expect before validation runs. The API never sends
+     * amount_input, so this is a no-op for API requests.
+     */
+    public function validationData()
+    {
+        if ($this->isStore() && $this->filled('amount_input') && !$this->filled('amount')) {
+            $this->merge(['amount' => (int) round((float) $this->input('amount_input') * 100)]);
+        }
+
+        return parent::validationData();
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array

@@ -3,6 +3,7 @@
 namespace Corals\Modules\PaymentGateway\Policies;
 
 use Corals\Foundation\Policies\BasePolicy;
+use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
 use Corals\User\Models\User;
 
@@ -17,7 +18,8 @@ class PaymentReferencePolicy extends BasePolicy
     public function view(User $user)
     {
         return $user->can('PaymentGateway::payment_reference.view')
-            || $user->tokenCan('payment:lookup');
+            || $user->tokenCan('payment:lookup')
+            || Issuer::accessibleBy($user)->exists();
     }
 
     /**
@@ -26,7 +28,8 @@ class PaymentReferencePolicy extends BasePolicy
      */
     public function create(User $user)
     {
-        return $user->can('PaymentGateway::payment_reference.create');
+        return $user->can('PaymentGateway::payment_reference.create')
+            || Issuer::accessibleBy($user)->exists();
     }
 
     /**

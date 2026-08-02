@@ -17,6 +17,8 @@ return [
         'issuer_id' => 'Issuer',
         'customer_id' => 'Customer ID',
         'amount' => 'Amount (minor units)',
+        'amount_input' => 'Amount',
+        'generating_for' => 'Generating for',
         'currency' => 'Currency',
         'due_date' => 'Due date',
         'reference' => 'Reference',

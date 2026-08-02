@@ -49,13 +49,17 @@ class PaymentReferencesController extends BaseController
      */
     public function create(PaymentReferenceRequest $request)
     {
-        $issuers = Issuer::query()->orderBy('name')->get();
+        $user = $request->user();
+
+        $issuers = Issuer::accessibleBy($user)->orderBy('name')->get();
+
+        $isAdmin = Issuer::isAdminUser($user);
 
         $this->setViewSharedData([
             'title_singular' => trans('Corals::labels.create_title', ['title' => $this->title_singular]),
         ]);
 
-        return view('PaymentGateway::payment_references.create')->with(compact('issuers'));
+        return view('PaymentGateway::payment_references.create')->with(compact('issuers', 'isAdmin'));
     }
 
     /**
@@ -75,6 +79,8 @@ class PaymentReferencesController extends BaseController
             $issuer = Issuer::findByHash($request->get('issuer_id'));
 
             abort_if(!$issuer, 404);
+
+            abort_if(!$issuer->isAccessibleBy($request->user()), 403, 'This user is not linked to the requested issuer.');
 
             $paymentReference = $this->paymentReferenceService->generateWithArtifacts(
                 $issuer,
@@ -102,6 +108,8 @@ class PaymentReferencesController extends BaseController
      */
     public function show(PaymentReferenceRequest $request, PaymentReference $paymentReference)
     {
+        abort_if(!$paymentReference->issuer->isAccessibleBy($request->user()), 403);
+
         $this->setViewSharedData([
             'title_singular' => trans('Corals::labels.show_title', ['title' => $paymentReference->reference]),
             'showModel' => $paymentReference,
