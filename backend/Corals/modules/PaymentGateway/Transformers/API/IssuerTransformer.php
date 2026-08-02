@@ -15,7 +15,7 @@ class IssuerTransformer extends APIBaseTransformer
     public function transform(Issuer $issuer)
     {
         $transformedArray = [
-            'id' => $issuer->id,
+            'id' => $issuer->hashed_id,
             'name' => $issuer->name,
             'sub_id' => $issuer->sub_id,
             'reference_layout' => $issuer->reference_layout,

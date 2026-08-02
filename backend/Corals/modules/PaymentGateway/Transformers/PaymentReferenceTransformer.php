@@ -22,7 +22,7 @@ class PaymentReferenceTransformer extends BaseTransformer
     public function transform(PaymentReference $paymentReference)
     {
         $transformedArray = [
-            'id' => $paymentReference->id,
+            'id' => $paymentReference->hashed_id,
             'reference' => HtmlElement('a', ['href' => $paymentReference->getShowURL()], $paymentReference->reference),
             'issuer_name' => $paymentReference->issuer?->name,
             'status' => $paymentReference->status,

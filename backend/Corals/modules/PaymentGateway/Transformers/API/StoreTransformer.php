@@ -15,7 +15,7 @@ class StoreTransformer extends APIBaseTransformer
     public function transform(Store $store)
     {
         $transformedArray = [
-            'id' => $store->id,
+            'id' => $store->hashed_id,
             'name' => $store->name,
             'created_at' => format_date($store->created_at),
             'updated_at' => format_date($store->updated_at),

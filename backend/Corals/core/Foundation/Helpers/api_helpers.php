@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 if (!function_exists('apiOptionAsObject')) {
     /**
@@ -77,7 +79,14 @@ if (!function_exists('apiExceptionResponse')) {
                 trans('validation.message'), 'error', 422);
         }
 
+        if ($exception instanceof AuthorizationException) {
+            return apiResponse(array_merge(['exception_code' => $exception->getCode()], $data),
+                strip_tags($exception->getMessage()), 'error', $exception->status() ?? 403);
+        }
+
+        $httpStatus = $exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : 400;
+
         return apiResponse(array_merge(['exception_code' => $exception->getCode()], $data),
-            strip_tags($exception->getMessage()), 'error', 400);
+            strip_tags($exception->getMessage()), 'error', $httpStatus);
     }
 }

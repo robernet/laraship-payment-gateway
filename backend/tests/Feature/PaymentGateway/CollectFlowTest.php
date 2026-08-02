@@ -172,4 +172,48 @@ class CollectFlowTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    #[Test]
+    public function collecting_without_the_payment_collect_ability_is_rejected()
+    {
+        $store = Store::create(['name' => 'Test Store 3']);
+
+        $operator = User::create([
+            'name' => 'Test Operator 3',
+            'email' => 'operator3@example.test',
+            'password' => 'secret-password',
+        ]);
+
+        OperatorStore::create(['user_id' => $operator->id, 'store_id' => $store->id]);
+
+        $issuer = Issuer::create([
+            'name' => 'Test Issuer 3',
+            'sub_id' => 8,
+            'reference_layout' => ['identifier_length' => 10],
+        ]);
+
+        $paymentReference = PaymentReference::create([
+            'issuer_id' => $issuer->id,
+            'reference' => '7770080000000042' . '5',
+            'integration_mode' => 'online',
+            'status' => 'pending',
+        ]);
+
+        // Deliberately missing 'payment:collect' - only lookup/read/shift abilities granted.
+        $token = $operator->createToken('pos-operator', [
+            'payment:lookup',
+            'transaction:read-own',
+            'shift:manage',
+            'store:' . $store->getHashedIdAttribute(),
+        ])->plainTextToken;
+
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $token])
+            ->postJson($this->apiUrl('transactions'), [
+                'payment_reference_id' => $paymentReference->getHashedIdAttribute(),
+                'amount' => 15230,
+                'currency' => 'MXN',
+            ]);
+
+        $response->assertStatus(403);
+    }
 }

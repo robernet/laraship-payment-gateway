@@ -22,7 +22,7 @@ class TransactionTransformer extends BaseTransformer
     public function transform(Transaction $transaction)
     {
         $transformedArray = [
-            'id' => $transaction->id,
+            'id' => $transaction->hashed_id,
             'reference' => HtmlElement('a', ['href' => $transaction->getShowURL()], $transaction->paymentReference?->reference),
             'store_name' => $transaction->shift?->store?->name,
             'operator_name' => $transaction->shift?->operator?->name,

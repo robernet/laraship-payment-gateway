@@ -39,6 +39,8 @@ class TransactionsController extends APIBaseController
     public function store(TransactionRequest $request, CollectionValidator $collectionValidator)
     {
         try {
+            $this->authorize('create', Transaction::class);
+
             $paymentReference = PaymentReference::findByHash($request->get('payment_reference_id'));
 
             if (!$paymentReference) {

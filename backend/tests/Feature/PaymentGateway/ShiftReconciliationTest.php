@@ -189,4 +189,66 @@ class ShiftReconciliationTest extends TestCase
         $close->assertStatus(200);
         $this->assertSame(0, $close->json('data.discrepancy_minor'));
     }
+
+    #[Test]
+    public function closing_a_shift_with_extra_cash_records_a_positive_discrepancy()
+    {
+        $store = Store::create(['name' => 'Over Store']);
+
+        $operator = User::create([
+            'name' => 'Over Operator',
+            'email' => 'over-operator@example.test',
+            'password' => 'secret-password',
+        ]);
+
+        OperatorStore::create(['user_id' => $operator->id, 'store_id' => $store->id]);
+
+        $issuer = Issuer::create([
+            'name' => 'Over Issuer',
+            'sub_id' => 10,
+            'reference_layout' => ['identifier_length' => 10],
+        ]);
+
+        // Deterministically grant permission to generate payment references,
+        // regardless of DB auto-increment order (isSuperUser() otherwise only
+        // bypasses this for whichever user happens to land on id 1).
+        \Spatie\Permission\Models\Permission::firstOrCreate([
+            'name' => 'PaymentGateway::payment_reference.create',
+            'guard_name' => config('auth.defaults.guard'),
+        ]);
+        $operator->givePermissionTo('PaymentGateway::payment_reference.create');
+
+        $opened = $this->loginAndOpenShift($store, $operator);
+        $token = $opened['token'];
+        $shiftHashid = $opened['shift_id'];
+        $headers = ['Authorization' => 'Bearer ' . $token];
+
+        $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
+            'issuer_id' => $issuer->getHashedIdAttribute(),
+            'customer_id' => '101',
+        ]);
+        $paymentReferenceId = $generate->json('data.id');
+
+        // Collected 5000, but the operator counts 5500 in the drawer (over).
+        $this->withHeaders($headers)->postJson($this->apiUrl('transactions'), [
+            'payment_reference_id' => $paymentReferenceId,
+            'amount' => 5000,
+            'currency' => 'MXN',
+        ])->assertStatus(200);
+
+        $close = $this->withHeaders($headers)->patchJson(
+            $this->apiUrl('shifts/' . $shiftHashid),
+            ['counted_amount' => 5500]
+        );
+
+        $close->assertStatus(200);
+        $this->assertSame(5500, $close->json('data.counted_amount_minor'));
+        $this->assertSame(500, $close->json('data.discrepancy_minor'));
+
+        $this->assertDatabaseHas('paymentgateway_shifts', [
+            'id' => \Corals\Modules\PaymentGateway\Models\Shift::findByHash($shiftHashid)->id,
+            'counted_amount_minor' => 5500,
+            'discrepancy_minor' => 500,
+        ]);
+    }
 }

@@ -82,8 +82,13 @@ Codes: `422` validation, `401` auth, `403` forbidden, `404` not found, `500` ser
   - `folio` (string) — internally-generated tracking id, format `FOL-YYYYMMDD-XXXXXX`
   - `barcode_url` (string) — public URL to a Code 128 PNG barcode of the reference
   - `pay_format_url` (string) — public URL to a rendered payment-slip PDF
+  - `pay_td_url` (string, nullable) — card-payment link URL (Phase 4 scaffold; no live card processor is wired yet, see `docs/roadmap.md` Phase 4)
+  - `autopay_enabled` (bool) — whether recurring AutoPay is configured for this reference (Phase 4 scaffold — schedules are recorded but never actually charged yet)
+  - `autopay_payment_number` (int, nullable) — number of AutoPay charges; required together with `autopay_frequency_days`
+  - `autopay_frequency_days` (int, nullable) — days between AutoPay charges; required together with `autopay_payment_number`
 - Collection-time behavior (enforced on `POST /transactions`, not a field): if `amount` is set on the reference, the collected amount must match **exactly** (`422` otherwise); if unset, any positive amount is accepted (partial or full). If `due_date` has passed and the issuer's `reject_late_payment` is true, collection is rejected (`422`).
 - **Authorization** (Phase 3): non-admin callers must be linked to the target issuer via `paymentgateway_issuer_users` (`403` otherwise) — we are the Reference Generator service, offered to issuers directly, not just admins. `clabe` and a legacy JWT/User-Pswd issuer-auth surface (for existing ClubPago-integrated issuers) are deliberately **not** implemented yet — see `docs/roadmap.md` for the open questions this raised.
+- **AutoPay scheduling** (Phase 4, scaffold only): setting `autopay_enabled` with `autopay_payment_number`/`autopay_frequency_days` records a row in an internal `paymentgateway_autopay_schedules` table (`status`, `next_charge_date`, `retry_count`) — this table has no API endpoint of its own and is not client-readable. No live card processor is wired to it yet; do not assume charges actually occur.
 
 ### Transaction
 - `POST /transactions` (collect) — `{payment_reference_id, amount, currency}`. The shift is always the requesting operator's own currently-open shift — never client-supplied.

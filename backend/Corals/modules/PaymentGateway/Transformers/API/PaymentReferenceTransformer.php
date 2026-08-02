@@ -15,9 +15,9 @@ class PaymentReferenceTransformer extends APIBaseTransformer
     public function transform(PaymentReference $paymentReference)
     {
         $transformedArray = [
-            'id' => $paymentReference->id,
+            'id' => $paymentReference->hashed_id,
             'reference' => $paymentReference->reference,
-            'issuer_id' => $paymentReference->issuer?->id,
+            'issuer_id' => $paymentReference->issuer?->hashed_id,
             'integration_mode' => $paymentReference->integration_mode,
             'status' => $paymentReference->status,
             'amount' => $paymentReference->amount_minor,

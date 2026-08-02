@@ -22,7 +22,7 @@ class ShiftTransformer extends BaseTransformer
     public function transform(Shift $shift)
     {
         $transformedArray = [
-            'id' => $shift->id,
+            'id' => $shift->hashed_id,
             'store_name' => HtmlElement('a', ['href' => $shift->getShowURL()], $shift->store?->name),
             'operator_name' => $shift->operator?->name,
             'opened_at' => format_date($shift->opened_at),

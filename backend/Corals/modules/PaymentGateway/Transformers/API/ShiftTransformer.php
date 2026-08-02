@@ -15,9 +15,9 @@ class ShiftTransformer extends APIBaseTransformer
     public function transform(Shift $shift)
     {
         $transformedArray = [
-            'id' => $shift->id,
-            'store_id' => $shift->store?->id,
-            'operator_id' => $shift->operator?->id,
+            'id' => $shift->hashed_id,
+            'store_id' => $shift->store?->hashed_id,
+            'operator_id' => $shift->operator?->hashed_id,
             'opened_at' => format_date($shift->opened_at),
             'closed_at' => $shift->closed_at ? format_date($shift->closed_at) : null,
             'counted_amount_minor' => $shift->counted_amount_minor,

@@ -15,9 +15,9 @@ class TransactionTransformer extends APIBaseTransformer
     public function transform(Transaction $transaction)
     {
         $transformedArray = [
-            'id' => $transaction->id,
-            'payment_reference_id' => $transaction->paymentReference?->id,
-            'shift_id' => $transaction->shift?->id,
+            'id' => $transaction->hashed_id,
+            'payment_reference_id' => $transaction->paymentReference?->hashed_id,
+            'shift_id' => $transaction->shift?->hashed_id,
             'amount' => $transaction->amount_minor,
             'currency' => $transaction->currency,
             'collected_at' => format_date($transaction->collected_at),

@@ -24,7 +24,7 @@ class StoreTransformer extends BaseTransformer
         $show_url = $store->getShowURL();
 
         $transformedArray = [
-            'id' => $store->id,
+            'id' => $store->hashed_id,
             'name' => HtmlElement('a', ['href' => $store->getShowURL()], $store->name),
             'created_at' => format_date($store->created_at),
             'updated_at' => format_date($store->updated_at),

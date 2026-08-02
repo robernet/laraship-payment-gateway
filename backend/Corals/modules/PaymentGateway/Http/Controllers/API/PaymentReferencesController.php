@@ -92,6 +92,8 @@ class PaymentReferencesController extends APIBaseController
     public function lookup(PaymentReferenceRequest $request, string $reference)
     {
         try {
+            $this->authorize('view', PaymentReference::class);
+
             $paymentReference = PaymentReference::query()->where('reference', $reference)->firstOrFail();
 
             return apiResponse($this->paymentReferenceService->getModelDetails($paymentReference));

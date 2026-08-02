@@ -36,6 +36,8 @@ class ShiftsController extends APIBaseController
     public function store(ShiftRequest $request)
     {
         try {
+            $this->authorize('create', Shift::class);
+
             $store = Store::findByHash($request->get('store_id'));
 
             if (!$store) {
@@ -80,6 +82,7 @@ class ShiftsController extends APIBaseController
     {
         try {
             abort_if($shift->operator_id !== $request->user()->id, 403, 'This shift belongs to a different operator.');
+            $this->authorize('update', $shift);
             abort_if(!$shift->isOpen(), 422, 'This shift is already closed.');
 
             $collectedMinor = (int) $shift->transactions()->sum('amount_minor');
