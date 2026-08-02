@@ -5,7 +5,7 @@
     "type": "module",
     "description": "Starter Package",
     "namespace": "Corals\\Modules\\PaymentGateway\\",
-    "provider": "Corals\\Modules\\PaymentGateway\\PaymentGatewayServiceProvider",
+    "provider": "PaymentGatewayServiceProvider",
     "version": "1.0",
     "load_order": "0",
     "folder": "PaymentGateway",
