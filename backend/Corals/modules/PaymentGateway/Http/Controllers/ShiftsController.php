@@ -33,6 +33,11 @@ class ShiftsController extends BaseController
      */
     public function index(ShiftRequest $request, ShiftsDataTable $dataTable)
     {
+        // No 'create' route exists for shifts (only index/show - they're only ever
+        // opened via the POS shift-open flow), so clear resourceModel: the crud
+        // layout would otherwise render a create button from its genericActions.
+        $this->setViewSharedData(['resource_model' => null]);
+
         return $dataTable->render('PaymentGateway::shifts.index');
     }
 

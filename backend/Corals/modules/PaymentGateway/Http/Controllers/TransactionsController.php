@@ -33,6 +33,11 @@ class TransactionsController extends BaseController
      */
     public function index(TransactionRequest $request, TransactionsDataTable $dataTable)
     {
+        // No 'create' route exists for transactions (only index/show - they're only
+        // ever created via the POS collect flow), so clear resourceModel: the crud
+        // layout would otherwise render a create button from its genericActions.
+        $this->setViewSharedData(['resource_model' => null]);
+
         return $dataTable->render('PaymentGateway::transactions.index');
     }
 

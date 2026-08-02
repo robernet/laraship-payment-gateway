@@ -1,5 +1,7 @@
 @extends('layouts.crud.index')
 
+@php($hideCreate = true)
+
 @section('content_header')
     @component('components.content_header')
         @slot('page_title')
