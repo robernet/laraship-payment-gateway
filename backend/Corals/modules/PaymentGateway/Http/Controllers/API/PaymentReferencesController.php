@@ -73,7 +73,10 @@ class PaymentReferencesController extends APIBaseController
                 $request->get('due_date'),
                 $generator,
                 $barcodeGenerator,
-                $payFormatGenerator
+                $payFormatGenerator,
+                $request->boolean('autopay_enabled'),
+                $request->get('autopay_payment_number'),
+                $request->get('autopay_frequency_days')
             );
 
             return apiResponse($this->paymentReferenceService->getModelDetails(), trans('Corals::messages.success.created', ['item' => $paymentReference->reference]));

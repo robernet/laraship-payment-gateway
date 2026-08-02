@@ -4,10 +4,12 @@ namespace Corals\Modules\PaymentGateway\Models;
 
 use Corals\Foundation\Models\BaseModel;
 use Corals\Foundation\Transformers\PresentableTrait;
+use Corals\Modules\PaymentGateway\Traits\ApiHashTrait;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Transaction extends BaseModel
 {
+    use ApiHashTrait;
     use PresentableTrait;
     use LogsActivity;
 

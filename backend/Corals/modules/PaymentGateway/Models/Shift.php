@@ -4,11 +4,13 @@ namespace Corals\Modules\PaymentGateway\Models;
 
 use Corals\Foundation\Models\BaseModel;
 use Corals\Foundation\Transformers\PresentableTrait;
+use Corals\Modules\PaymentGateway\Traits\ApiHashTrait;
 use Corals\User\Models\User;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Shift extends BaseModel
 {
+    use ApiHashTrait;
     use PresentableTrait;
     use LogsActivity;
 

@@ -6,6 +6,7 @@ use Corals\Foundation\Services\BaseServiceClass;
 use Corals\Modules\PaymentGateway\Classes\BarcodeGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\PayFormatGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\ReferenceGeneratorService;
+use Corals\Modules\PaymentGateway\Models\AutopaySchedule;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
 use Illuminate\Support\Str;
@@ -28,7 +29,10 @@ class PaymentReferenceService extends BaseServiceClass
         ?string $dueDate,
         ReferenceGeneratorService $generator,
         BarcodeGeneratorService $barcodeGenerator,
-        PayFormatGeneratorService $payFormatGenerator
+        PayFormatGeneratorService $payFormatGenerator,
+        bool $autopayEnabled = false,
+        ?int $autopayPaymentNumber = null,
+        ?int $autopayFrequencyDays = null
     ): PaymentReference {
         $reference = $generator->generate($issuer, $customerId, $amountMinor, $dueDate);
 
@@ -44,12 +48,23 @@ class PaymentReferenceService extends BaseServiceClass
             'currency' => $currency,
             'due_date' => $dueDate,
             'folio' => 'FOL-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6)),
+            'autopay_enabled' => $autopayEnabled,
+            'autopay_payment_number' => $autopayPaymentNumber,
+            'autopay_frequency_days' => $autopayFrequencyDays,
         ]);
 
         $paymentReference->update([
             'barcode_url' => $barcodeGenerator->generate($reference),
             'pay_format_url' => $payFormatGenerator->generate($paymentReference),
         ]);
+
+        if ($autopayEnabled) {
+            AutopaySchedule::create([
+                'payment_reference_id' => $paymentReference->id,
+                'status' => 'scheduled',
+                'next_charge_date' => now()->addDays($autopayFrequencyDays),
+            ]);
+        }
 
         $this->setModel($paymentReference);
 
