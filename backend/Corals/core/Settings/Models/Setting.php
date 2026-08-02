@@ -3,11 +3,12 @@
 namespace Corals\Settings\Models;
 
 use Corals\Foundation\Models\BaseModel;
+use Corals\Foundation\Traits\Cache\Cachable;
 use Corals\Foundation\Transformers\PresentableTrait;
 
 class Setting extends BaseModel
 {
-    use PresentableTrait;
+    use PresentableTrait, Cachable;
 
     public $htmlentitiesExcluded = ['value'];
 

@@ -3,11 +3,12 @@
 namespace Corals\Settings\Models;
 
 use Corals\Foundation\Models\BaseModel;
+use Corals\Foundation\Traits\Cache\Cachable;
 use Corals\Foundation\Transformers\PresentableTrait;
 
 class ModelSetting extends BaseModel
 {
-    use PresentableTrait;
+    use PresentableTrait, Cachable;
 
     /**
      *  Model configuration.
