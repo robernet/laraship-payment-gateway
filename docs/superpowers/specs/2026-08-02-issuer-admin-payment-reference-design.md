@@ -1,6 +1,11 @@
 # Issuer & Admin Payment Reference Generation
 
-Status: approved, not yet implemented.
+Status: implemented (commit e1aa255). One deviation from the spec below: the
+blanket `Administrations::admin.paymentgateway` permission (this module's
+existing admin pattern - see `IssuersAdminControllerTest`) is also treated as
+admin access, not just `isSuperUser()`/`payment_reference.create` - otherwise
+a normal admin with only the blanket permission got an empty issuer list and
+a 500 on `create`. See `Issuer::isAdminUser()`.
 Backend: Laraship (`backend/`), module `Corals\Modules\PaymentGateway`.
 
 ## Problem
