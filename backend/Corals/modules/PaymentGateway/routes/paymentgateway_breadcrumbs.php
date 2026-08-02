@@ -16,6 +16,22 @@ Breadcrumbs::register('paymentgateway_store_show', function ($breadcrumbs) {
     $breadcrumbs->push(view()->shared('title_singular'));
 });
 
+//Issuer
+Breadcrumbs::register('paymentgateway_issuers', function ($breadcrumbs) {
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('PaymentGateway::module.issuer.title'), url(config('paymentgateway.models.issuer.resource_url')));
+});
+
+Breadcrumbs::register('paymentgateway_issuer_create_edit', function ($breadcrumbs) {
+    $breadcrumbs->parent('paymentgateway_issuers');
+    $breadcrumbs->push(view()->shared('title_singular'));
+});
+
+Breadcrumbs::register('paymentgateway_issuer_show', function ($breadcrumbs) {
+    $breadcrumbs->parent('paymentgateway_issuers');
+    $breadcrumbs->push(view()->shared('title_singular'));
+});
+
 //PaymentReference
 Breadcrumbs::register('paymentgateway_payment_references', function ($breadcrumbs) {
     $breadcrumbs->parent('dashboard');

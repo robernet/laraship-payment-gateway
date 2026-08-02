@@ -4,6 +4,15 @@ return [
     'store' => [
         'name' => 'Name',
     ],
+    'issuer' => [
+        'name' => 'Name',
+        'sub_id' => 'Sub ID',
+        'reject_late_payment' => 'Reject late payment',
+        'reference_layout' => 'Reference layout',
+        'identifier_length' => 'Identifier length',
+        'amount_length' => 'Amount length',
+        'embed_due_date' => 'Embed due date',
+    ],
     'payment_reference' => [
         'issuer_id' => 'Issuer',
         'customer_id' => 'Customer ID',

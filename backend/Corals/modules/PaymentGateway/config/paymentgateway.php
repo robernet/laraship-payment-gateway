@@ -7,6 +7,7 @@ return [
             'resource_url' => 'stores',
         ],
         'issuer' => [
+            'presenter' => \Corals\Modules\PaymentGateway\Transformers\IssuerPresenter::class,
             'resource_url' => 'issuers',
         ],
         'payment_reference' => [
