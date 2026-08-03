@@ -7,4 +7,8 @@
     <div class="title m-b-md">
         Forbidden<strong>!</strong>
     </div>
+
+    <div class="links">
+        <a href="{{ route('login') }}">Log in</a>
+    </div>
 @endsection
