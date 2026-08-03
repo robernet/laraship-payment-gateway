@@ -2,9 +2,12 @@
 
 return [
     'models' => [
-        'store' => [
-            'presenter' => \Corals\Modules\PaymentGateway\Transformers\StorePresenter::class,
-            'resource_url' => 'stores',
+        'autopay_schedule' => [
+            'resource_url' => 'autopay-schedules',
+        ],
+        'invoice' => [
+            'presenter' => \Corals\Modules\PaymentGateway\Transformers\InvoicePresenter::class,
+            'resource_url' => 'invoices',
         ],
         'issuer' => [
             'presenter' => \Corals\Modules\PaymentGateway\Transformers\IssuerPresenter::class,
@@ -22,8 +25,9 @@ return [
             'presenter' => \Corals\Modules\PaymentGateway\Transformers\ShiftPresenter::class,
             'resource_url' => 'shifts',
         ],
-        'autopay_schedule' => [
-            'resource_url' => 'autopay-schedules',
+        'store' => [
+            'presenter' => \Corals\Modules\PaymentGateway\Transformers\StorePresenter::class,
+            'resource_url' => 'stores',
         ],
     ],
 ];

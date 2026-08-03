@@ -32,6 +32,22 @@ Breadcrumbs::register('paymentgateway_issuer_show', function ($breadcrumbs) {
     $breadcrumbs->push(view()->shared('title_singular'));
 });
 
+//Invoice
+Breadcrumbs::register('paymentgateway_invoices', function ($breadcrumbs) {
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('PaymentGateway::module.invoice.title'), url(config('paymentgateway.models.invoice.resource_url')));
+});
+
+Breadcrumbs::register('paymentgateway_invoice_create_edit', function ($breadcrumbs) {
+    $breadcrumbs->parent('paymentgateway_invoices');
+    $breadcrumbs->push(view()->shared('title_singular'));
+});
+
+Breadcrumbs::register('paymentgateway_invoice_show', function ($breadcrumbs) {
+    $breadcrumbs->parent('paymentgateway_invoices');
+    $breadcrumbs->push(view()->shared('title_singular'));
+});
+
 //PaymentReference
 Breadcrumbs::register('paymentgateway_payment_references', function ($breadcrumbs) {
     $breadcrumbs->parent('dashboard');

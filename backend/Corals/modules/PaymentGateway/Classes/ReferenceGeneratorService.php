@@ -11,7 +11,7 @@ class ReferenceGeneratorService
     /**
      * Build a Reference for the given issuer and customer identifier.
      *
-     * Format: PREFIX(777, from Settings) + SUB_ID(issuer, 3 digits)
+     * Format: PREFIX(from Settings, always zero-padded to 3 digits) + SUB_ID(issuer, 3 digits)
      *         + IDENTIFIER(customer id [+ optional amount] [+ optional due date], zero-padded per the
      *         issuer's layout) + DV(1, Mod10). Max 29 digits total.
      *
@@ -24,7 +24,7 @@ class ReferenceGeneratorService
      */
     public function generate(Issuer $issuer, string $customerId, ?int $amountMinor = null, DateTimeInterface|string|null $dueDate = null): string
     {
-        $prefix = (string) \Settings::get('paymentgateway_gateway_prefix', '777');
+        $prefix = str_pad((string) \Settings::get('paymentgateway_id', '777'), 3, '0', STR_PAD_LEFT);
         $subId = str_pad((string) $issuer->sub_id, 3, '0', STR_PAD_LEFT);
 
         $identifierLength = (int) data_get($issuer->reference_layout, 'identifier_length', 15);

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\PaymentGateway;
 
+use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\OperatorStore;
 use Corals\Modules\PaymentGateway\Models\Store;
@@ -106,9 +107,17 @@ class ShiftReconciliationTest extends TestCase
         $shiftHashid = $opened['shift_id'];
         $headers = ['Authorization' => 'Bearer ' . $token];
 
-        $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
-            'issuer_id' => $issuer->getHashedIdAttribute(),
+        $invoice = Invoice::create([
+            'issuer_id' => $issuer->id,
             'customer_id' => '99',
+            'amount_minor' => 15230,
+            'currency' => 'MXN',
+            'due_date' => now()->addDays(10)->toDateString(),
+            'status' => 'unpaid',
+        ]);
+
+        $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
+            'invoice_id' => $invoice->getHashedIdAttribute(),
         ]);
         $generate->assertStatus(200);
         $paymentReferenceId = $generate->json('data.id');
@@ -169,9 +178,17 @@ class ShiftReconciliationTest extends TestCase
         $shiftHashid = $opened['shift_id'];
         $headers = ['Authorization' => 'Bearer ' . $token];
 
-        $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
-            'issuer_id' => $issuer->getHashedIdAttribute(),
+        $invoice = Invoice::create([
+            'issuer_id' => $issuer->id,
             'customer_id' => '100',
+            'amount_minor' => 5000,
+            'currency' => 'MXN',
+            'due_date' => now()->addDays(10)->toDateString(),
+            'status' => 'unpaid',
+        ]);
+
+        $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
+            'invoice_id' => $invoice->getHashedIdAttribute(),
         ]);
         $paymentReferenceId = $generate->json('data.id');
 
@@ -223,9 +240,17 @@ class ShiftReconciliationTest extends TestCase
         $shiftHashid = $opened['shift_id'];
         $headers = ['Authorization' => 'Bearer ' . $token];
 
-        $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
-            'issuer_id' => $issuer->getHashedIdAttribute(),
+        $invoice = Invoice::create([
+            'issuer_id' => $issuer->id,
             'customer_id' => '101',
+            'amount_minor' => 5000,
+            'currency' => 'MXN',
+            'due_date' => now()->addDays(10)->toDateString(),
+            'status' => 'unpaid',
+        ]);
+
+        $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
+            'invoice_id' => $invoice->getHashedIdAttribute(),
         ]);
         $paymentReferenceId = $generate->json('data.id');
 

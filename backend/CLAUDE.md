@@ -103,8 +103,8 @@ This backend reimplements ClubPago's *Generador de Referencias* (cash-payment ne
 
 **Reference** — numeric string, **max 29 digits**:
 `PREFIX(777) + SUB_ID(3 = issuer) + IDENTIFIER(customer/payment id [+ optional amount] [+ optional due date], left-zero-padded to the issuer's defined length) + DV(1)`
-- First 6 digits (`777` + SUB_ID) identify the issuer; last digit is the check digit. This value will be stored in the Gayeway section of the Settings.
-- The `777` is a 3 digit gateway identifier that will be stored in the Gateway section of Settings.
+- First 6 digits (`777` + SUB_ID) identify the issuer; last digit is the check digit.
+- The `777` is the gateway prefix, stored in **Settings** (`PaymentGateway` category, setting code `paymentgateway_id` — seeded by `PaymentGatewaySettingsDatabaseSeeder`, default `000`, edit under Settings > Payment Gateway ID) and read via `\Settings::get('paymentgateway_id', '777')` in `ReferenceGeneratorService::generate()`. The Create/Edit Issuer form (`issuers/create_edit.blade.php`) renders a live sample of the full reference — prefix + sub ID + identifier + optional amount/due-date + Mod10 check digit — as Identifier length/Amount length/Embed due date are edited, so this is the one place to verify the prefix actually in effect.
 - **DV = Mod10 / Luhn** over the preceding digits — catches miskeyed manual entry.
 - Each issuer **defines its reference layout** (which fields, what lengths) at setup; the platform stores that spec and validates against it.
 - **Amount embedded → payment must match exactly; omitted → informational, and partial/overdue payments are accepted.** Same for **due date**: embed only to reject late payment. Amounts are integer **minor units** (152.30 → `15230`), consistent with the API contract's money rule.

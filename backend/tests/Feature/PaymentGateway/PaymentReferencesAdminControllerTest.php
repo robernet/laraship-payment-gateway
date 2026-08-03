@@ -3,6 +3,7 @@
 namespace Tests\Feature\PaymentGateway;
 
 use Corals\Modules\PaymentGateway\DataTables\PaymentReferencesDataTable;
+use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\IssuerUser;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
@@ -87,93 +88,109 @@ class PaymentReferencesAdminControllerTest extends TestCase
         IssuerUser::create(['user_id' => $user->id, 'issuer_id' => $issuer->id]);
     }
 
+    private function unpaidInvoice(Issuer $issuer, string $suffix): Invoice
+    {
+        return Invoice::create([
+            'issuer_id' => $issuer->id,
+            'customer_id' => 'cust-' . $suffix,
+            'amount_minor' => 15000,
+            'currency' => 'MXN',
+            'due_date' => now()->addDays(10)->toDateString(),
+            'status' => 'unpaid',
+        ]);
+    }
+
     #[Test]
-    public function admin_sees_full_issuer_select_and_can_generate_for_any_issuer()
+    public function admin_sees_all_unpaid_invoices_grouped_by_issuer_and_can_generate_from_one()
     {
         $admin = $this->admin('generate-any');
         $issuerOne = $this->issuer('admin-one');
         $issuerTwo = $this->issuer('admin-two');
+        $invoiceOne = $this->unpaidInvoice($issuerOne, 'one');
+        $invoiceTwo = $this->unpaidInvoice($issuerTwo, 'two');
 
         $this->actingAs($admin)->get('/payment-references/create')
             ->assertStatus(200)
-            ->assertSee('<select name="issuer_id"', false)
-            ->assertSee($issuerOne->name)
-            ->assertSee($issuerTwo->name);
+            ->assertSee('<optgroup label="' . $issuerOne->name . '"', false)
+            ->assertSee('<optgroup label="' . $issuerTwo->name . '"', false)
+            ->assertSee($invoiceOne->customer_id)
+            ->assertSee($invoiceTwo->customer_id);
 
         $response = $this->actingAs($admin)->post('/payment-references', [
-            'issuer_id' => $issuerTwo->getHashedIdAttribute(),
-            'customer_id' => 'cust-1',
-            'currency' => 'MXN',
+            'invoice_id' => $invoiceTwo->getHashedIdAttribute(),
         ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('paymentgateway_payment_references', [
             'issuer_id' => $issuerTwo->id,
+            'invoice_id' => $invoiceTwo->id,
+            'amount_minor' => 15000,
+            'currency' => 'MXN',
             'status' => 'pending',
         ]);
     }
 
     #[Test]
-    public function single_issuer_linked_user_gets_auto_selected_hidden_field_and_can_generate()
+    public function single_issuer_linked_user_sees_a_flat_invoice_list_and_can_generate()
     {
         $user = $this->nonPrivilegedUser('linked-single');
         $issuer = $this->issuer('linked-single');
+        $invoice = $this->unpaidInvoice($issuer, 'single');
         $this->link($user, $issuer);
 
         $this->actingAs($user)->get('/payment-references/create')
             ->assertStatus(200)
-            ->assertDontSee('<select name="issuer_id"', false)
-            ->assertSee('name="issuer_id" value="' . $issuer->getHashedIdAttribute() . '"', false)
-            ->assertSee($issuer->name);
+            ->assertDontSee('<optgroup', false)
+            ->assertSee($invoice->customer_id);
 
         $response = $this->actingAs($user)->post('/payment-references', [
-            'issuer_id' => $issuer->getHashedIdAttribute(),
-            'customer_id' => 'cust-2',
-            'currency' => 'MXN',
+            'invoice_id' => $invoice->getHashedIdAttribute(),
         ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('paymentgateway_payment_references', [
             'issuer_id' => $issuer->id,
-            'status' => 'pending',
+            'invoice_id' => $invoice->id,
         ]);
     }
 
     #[Test]
-    public function two_issuer_linked_user_sees_scoped_picker_excluding_unrelated_issuer()
+    public function two_issuer_linked_user_sees_grouped_list_excluding_unrelated_issuers_invoices()
     {
         $user = $this->nonPrivilegedUser('linked-two');
         $issuerOne = $this->issuer('scoped-one');
         $issuerTwo = $this->issuer('scoped-two');
         $unrelatedIssuer = $this->issuer('scoped-unrelated');
+        $invoiceOne = $this->unpaidInvoice($issuerOne, 'scoped-one');
+        $invoiceTwo = $this->unpaidInvoice($issuerTwo, 'scoped-two');
+        $unrelatedInvoice = $this->unpaidInvoice($unrelatedIssuer, 'scoped-unrelated');
         $this->link($user, $issuerOne);
         $this->link($user, $issuerTwo);
 
         $this->actingAs($user)->get('/payment-references/create')
             ->assertStatus(200)
-            ->assertSee('<select name="issuer_id"', false)
-            ->assertSee($issuerOne->name)
-            ->assertSee($issuerTwo->name)
-            ->assertDontSee($unrelatedIssuer->name);
+            ->assertSee('<optgroup', false)
+            ->assertSee($invoiceOne->customer_id)
+            ->assertSee($invoiceTwo->customer_id)
+            ->assertDontSee($unrelatedInvoice->customer_id);
     }
 
     #[Test]
-    public function issuer_linked_user_cannot_generate_for_an_issuer_they_are_not_linked_to()
+    public function issuer_linked_user_cannot_generate_from_an_invoice_of_an_unlinked_issuer()
     {
         $user = $this->nonPrivilegedUser('linked-foreign');
         $ownIssuer = $this->issuer('own');
         $foreignIssuer = $this->issuer('foreign');
+        $foreignInvoice = $this->unpaidInvoice($foreignIssuer, 'foreign');
         $this->link($user, $ownIssuer);
 
         $response = $this->actingAs($user)->post('/payment-references', [
-            'issuer_id' => $foreignIssuer->getHashedIdAttribute(),
-            'customer_id' => 'cust-3',
-            'currency' => 'MXN',
+            'invoice_id' => $foreignInvoice->getHashedIdAttribute(),
         ]);
 
         $response->assertRedirect('/payment-references');
         $this->assertDatabaseMissing('paymentgateway_payment_references', [
-            'issuer_id' => $foreignIssuer->id,
+            'invoice_id' => $foreignInvoice->id,
         ]);
     }
 
@@ -182,19 +199,37 @@ class PaymentReferencesAdminControllerTest extends TestCase
     {
         $user = $this->nonPrivilegedUser('no-access');
         $issuer = $this->issuer('no-access');
+        $invoice = $this->unpaidInvoice($issuer, 'no-access');
 
         $this->actingAs($user)->get('/payment-references/create')->assertStatus(403);
 
         $response = $this->actingAs($user)->post('/payment-references', [
-            'issuer_id' => $issuer->getHashedIdAttribute(),
-            'customer_id' => 'cust-4',
-            'currency' => 'MXN',
+            'invoice_id' => $invoice->getHashedIdAttribute(),
         ]);
 
         $response->assertRedirect('/payment-references');
         $this->assertDatabaseMissing('paymentgateway_payment_references', [
-            'issuer_id' => $issuer->id,
+            'invoice_id' => $invoice->id,
         ]);
+    }
+
+    #[Test]
+    public function generating_from_an_invoice_hides_it_from_the_unpaid_list_and_locks_it_from_editing()
+    {
+        $admin = $this->admin('lock');
+        $issuer = $this->issuer('lock');
+        $invoice = $this->unpaidInvoice($issuer, 'lock');
+
+        $this->actingAs($admin)->post('/payment-references', [
+            'invoice_id' => $invoice->getHashedIdAttribute(),
+        ])->assertRedirect();
+
+        $this->actingAs($admin)->get('/payment-references/create')
+            ->assertStatus(200)
+            ->assertDontSee($invoice->customer_id);
+
+        $this->actingAs($admin)->get('/invoices/' . $invoice->getHashedIdAttribute() . '/edit')
+            ->assertStatus(403);
     }
 
     #[Test]
@@ -263,44 +298,5 @@ class PaymentReferencesAdminControllerTest extends TestCase
 
         $this->assertContains($ownReference->reference, $references);
         $this->assertNotContains($otherReference->reference, $references);
-    }
-
-    #[Test]
-    public function decimal_amount_input_converts_to_minor_units()
-    {
-        $admin = $this->admin('decimal');
-        $issuer = $this->issuer('decimal');
-
-        $response = $this->actingAs($admin)->post('/payment-references', [
-            'issuer_id' => $issuer->getHashedIdAttribute(),
-            'customer_id' => 'cust-5',
-            'currency' => 'MXN',
-            'amount_input' => '150.00',
-        ]);
-
-        $response->assertRedirect();
-        $this->assertDatabaseHas('paymentgateway_payment_references', [
-            'issuer_id' => $issuer->id,
-            'amount_minor' => 15000,
-        ]);
-    }
-
-    #[Test]
-    public function missing_amount_validation_error_is_visible_on_the_rendered_create_page()
-    {
-        $admin = $this->admin('missing-amount');
-        $issuer = $this->issuer('missing-amount', ['identifier_length' => 6, 'amount_length' => 8]);
-
-        $response = $this->from('/payment-references/create')->actingAs($admin)->post('/payment-references', [
-            'issuer_id' => $issuer->getHashedIdAttribute(),
-            'customer_id' => 'cust-6',
-            'currency' => 'MXN',
-        ]);
-
-        $response->assertSessionHasErrors('amount');
-
-        $this->actingAs($admin)->get('/payment-references/create')
-            ->assertStatus(200)
-            ->assertSee(trans('validation.required', ['attribute' => 'amount']));
     }
 }

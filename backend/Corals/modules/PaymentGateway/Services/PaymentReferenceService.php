@@ -7,26 +7,25 @@ use Corals\Modules\PaymentGateway\Classes\BarcodeGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\PayFormatGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\ReferenceGeneratorService;
 use Corals\Modules\PaymentGateway\Models\AutopaySchedule;
-use Corals\Modules\PaymentGateway\Models\Issuer;
+use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
 use Illuminate\Support\Str;
 
 class PaymentReferenceService extends BaseServiceClass
 {
     /**
-     * Generate a Reference for an issuer/customer, persist it, and synchronously
+     * Generate a Reference for an Invoice, persist it, and synchronously
      * render its barcode + pay-format artifacts. Shared by the API and admin
      * controllers so the two surfaces can never drift.
      *
-     * Mode ("online" vs "batch") is derived entirely from the issuer's own
-     * reference_layout - never a caller-supplied flag.
+     * The issuer, identifier, amount, currency, and due date all come from
+     * the Invoice - it's the unique identifier generation is keyed on, not a
+     * caller-supplied customer id. Mode ("online" vs "batch") is derived
+     * entirely from the issuer's own reference_layout - never a caller-supplied
+     * flag.
      */
     public function generateWithArtifacts(
-        Issuer $issuer,
-        string $customerId,
-        ?int $amountMinor,
-        ?string $currency,
-        ?string $dueDate,
+        Invoice $invoice,
         ReferenceGeneratorService $generator,
         BarcodeGeneratorService $barcodeGenerator,
         PayFormatGeneratorService $payFormatGenerator,
@@ -34,13 +33,19 @@ class PaymentReferenceService extends BaseServiceClass
         ?int $autopayPaymentNumber = null,
         ?int $autopayFrequencyDays = null
     ): PaymentReference {
-        $reference = $generator->generate($issuer, $customerId, $amountMinor, $dueDate);
+        $issuer = $invoice->issuer;
+        $amountMinor = $invoice->amount_minor;
+        $currency = $invoice->currency;
+        $dueDate = $invoice->due_date?->toDateString();
+
+        $reference = $generator->generate($issuer, (string) $invoice->id, $amountMinor, $dueDate);
 
         $isBatchMode = data_get($issuer->reference_layout, 'amount_length')
             || data_get($issuer->reference_layout, 'embed_due_date');
 
         $paymentReference = PaymentReference::create([
             'issuer_id' => $issuer->id,
+            'invoice_id' => $invoice->id,
             'reference' => $reference,
             'integration_mode' => $isBatchMode ? 'batch' : 'online',
             'status' => 'pending',

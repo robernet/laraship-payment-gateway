@@ -5,6 +5,7 @@ namespace Tests\Feature\PaymentGateway;
 use Corals\Modules\PaymentGateway\Classes\BarcodeGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\PayFormatGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\ReferenceGeneratorService;
+use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Services\PaymentReferenceService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -80,12 +81,17 @@ class ArtifactGenerationTest extends TestCase
 
         $issuer = $this->makeIssuer();
 
+        $invoice = Invoice::create([
+            'issuer_id' => $issuer->id,
+            'customer_id' => '42',
+            'amount_minor' => 15230,
+            'currency' => 'MXN',
+            'due_date' => now()->addDays(10)->toDateString(),
+            'status' => 'unpaid',
+        ]);
+
         $paymentReference = (new PaymentReferenceService())->generateWithArtifacts(
-            $issuer,
-            '42',
-            null,
-            null,
-            null,
+            $invoice,
             new ReferenceGeneratorService(),
             new BarcodeGeneratorService(),
             new PayFormatGeneratorService()
@@ -114,12 +120,17 @@ class ArtifactGenerationTest extends TestCase
             'reference_layout' => ['identifier_length' => 6, 'amount_length' => 8],
         ]);
 
+        $invoice = Invoice::create([
+            'issuer_id' => $issuer->id,
+            'customer_id' => '42',
+            'amount_minor' => 15230,
+            'currency' => 'MXN',
+            'due_date' => now()->addDays(10)->toDateString(),
+            'status' => 'unpaid',
+        ]);
+
         $paymentReference = (new PaymentReferenceService())->generateWithArtifacts(
-            $issuer,
-            '42',
-            15230,
-            'MXN',
-            null,
+            $invoice,
             new ReferenceGeneratorService(),
             new BarcodeGeneratorService(),
             new PayFormatGeneratorService()

@@ -28,46 +28,25 @@
                 <form method="POST" action="{{ url(config('paymentgateway.models.payment_reference.resource_url')) }}">
                     @csrf
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
-                                <label>{{ trans('PaymentGateway::attributes.payment_reference.issuer_id') }}</label>
-                                @if ($isAdmin || $issuers->count() > 1)
-                                    <select name="issuer_id" class="form-control" required>
-                                        <option value="">-</option>
-                                        @foreach ($issuers as $issuer)
-                                            <option value="{{ $issuer->getHashedIdAttribute() }}">{{ $issuer->name }}</option>
+                                <label>{{ trans('PaymentGateway::attributes.payment_reference.invoice_id') }}</label>
+                                <select name="invoice_id" class="form-control" required>
+                                    <option value="">-</option>
+                                    @if ($groupByIssuer)
+                                        @foreach ($invoices->groupBy(fn ($invoice) => $invoice->issuer->name) as $issuerName => $issuerInvoices)
+                                            <optgroup label="{{ $issuerName }}">
+                                                @foreach ($issuerInvoices as $invoice)
+                                                    <option value="{{ $invoice->getHashedIdAttribute() }}">{{ $invoice->customer_id }} - {{ $invoice->amount_minor }} {{ $invoice->currency }} ({{ $invoice->due_date?->toDateString() }})</option>
+                                                @endforeach
+                                            </optgroup>
                                         @endforeach
-                                    </select>
-                                @else
-                                    <input type="hidden" name="issuer_id" value="{{ $issuers->first()->getHashedIdAttribute() }}">
-                                    <p class="form-control-static">{{ trans('PaymentGateway::attributes.payment_reference.generating_for') }}: {{ $issuers->first()->name }}</p>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>{{ trans('PaymentGateway::attributes.payment_reference.customer_id') }}</label>
-                                <input type="text" name="customer_id" class="form-control" maxlength="22" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>{{ trans('PaymentGateway::attributes.payment_reference.amount_input') }}</label>
-                                <input type="number" name="amount_input" class="form-control" step="0.01" min="0.01" placeholder="150.00">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>{{ trans('PaymentGateway::attributes.payment_reference.currency') }}</label>
-                                <input type="text" name="currency" class="form-control" maxlength="3" value="MXN">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>{{ trans('PaymentGateway::attributes.payment_reference.due_date') }}</label>
-                                <input type="date" name="due_date" class="form-control">
+                                    @else
+                                        @foreach ($invoices as $invoice)
+                                            <option value="{{ $invoice->getHashedIdAttribute() }}">{{ $invoice->customer_id }} - {{ $invoice->amount_minor }} {{ $invoice->currency }} ({{ $invoice->due_date?->toDateString() }})</option>
+                                        @endforeach
+                                    @endif
+                                </select>
                             </div>
                         </div>
                     </div>

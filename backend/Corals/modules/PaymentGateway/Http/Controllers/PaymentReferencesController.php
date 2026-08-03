@@ -8,6 +8,7 @@ use Corals\Modules\PaymentGateway\Classes\PayFormatGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\ReferenceGeneratorService;
 use Corals\Modules\PaymentGateway\DataTables\PaymentReferencesDataTable;
 use Corals\Modules\PaymentGateway\Http\Requests\PaymentReferenceRequest;
+use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
 use Corals\Modules\PaymentGateway\Services\PaymentReferenceService;
@@ -41,8 +42,8 @@ class PaymentReferencesController extends BaseController
     }
 
     /**
-     * Show the "generate a reference" form - admins pick an issuer and enter
-     * a customer id (+ amount/due date if that issuer requires them).
+     * Show the "generate a reference" form - pick an unpaid Invoice; its
+     * issuer, amount, currency, and due date all come from the invoice.
      *
      * @param PaymentReferenceRequest $request
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
@@ -51,15 +52,23 @@ class PaymentReferencesController extends BaseController
     {
         $user = $request->user();
 
-        $issuers = Issuer::accessibleBy($user)->orderBy('name')->get();
+        $accessibleIssuerIds = Issuer::accessibleBy($user)->pluck('id');
 
-        $isAdmin = Issuer::isAdminUser($user);
+        $invoices = Invoice::query()
+            ->whereIn('issuer_id', $accessibleIssuerIds)
+            ->where('status', 'unpaid')
+            ->whereDoesntHave('paymentReference')
+            ->with('issuer')
+            ->orderBy('due_date')
+            ->get();
+
+        $groupByIssuer = Issuer::isAdminUser($user) || $accessibleIssuerIds->count() > 1;
 
         $this->setViewSharedData([
             'title_singular' => trans('Corals::labels.create_title', ['title' => $this->title_singular]),
         ]);
 
-        return view('PaymentGateway::payment_references.create')->with(compact('issuers', 'isAdmin'));
+        return view('PaymentGateway::payment_references.create')->with(compact('invoices', 'groupByIssuer'));
     }
 
     /**
@@ -76,18 +85,18 @@ class PaymentReferencesController extends BaseController
         PayFormatGeneratorService $payFormatGenerator
     ) {
         try {
-            $issuer = Issuer::findByHash($request->get('issuer_id'));
+            $invoice = Invoice::findByHash($request->get('invoice_id'));
 
-            abort_if(!$issuer, 404);
+            abort_if(!$invoice, 404);
+
+            $issuer = $invoice->issuer;
 
             abort_if(!$issuer->isAccessibleBy($request->user()), 403, 'This user is not linked to the requested issuer.');
 
+            abort_if($invoice->paymentReference()->exists(), 422, 'This invoice already has a Payment Reference.');
+
             $paymentReference = $this->paymentReferenceService->generateWithArtifacts(
-                $issuer,
-                $request->get('customer_id'),
-                $request->get('amount'),
-                $request->get('currency'),
-                $request->get('due_date'),
+                $invoice,
                 $generator,
                 $barcodeGenerator,
                 $payFormatGenerator

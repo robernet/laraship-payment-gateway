@@ -16,11 +16,11 @@ class PaymentGatewaySettingsDatabaseSeeder extends Seeder
     {
         \DB::table('settings')->insert([
             [
-                'code' => 'paymentgateway_setting',
-                'type' => 'TEXT',
+                'code' => 'paymentgateway_id',
+                'type' => 'NUMBER',
                 'category' => 'PaymentGateway',
-                'label' => 'PaymentGateway setting',
-                'value' => 'paymentgateway',
+                'label' => 'Payment Gateway ID',
+                'value' => '000',
                 'editable' => 1,
                 'hidden' => 0,
                 'created_at' => Carbon::now(),

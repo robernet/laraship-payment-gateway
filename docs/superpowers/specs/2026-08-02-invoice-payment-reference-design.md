@@ -1,6 +1,24 @@
 # Invoice-Based Payment Reference Generation (Admin Panel)
 
-Status: approved, not yet implemented.
+Status: implemented, then superseded on the API-scope point. The "Scope"
+section below says `POST /payment-references` keeps accepting `customer_id`
+and is untouched by this work — that was true when this spec was written,
+but a later change extended the same invoice_id-based flow to the public
+API too: `POST /payment-references` now requires `invoice_id` (no more
+`customer_id`/`amount`/`currency`/`due_date` in the request body), and a new
+`POST/GET /invoices` API surface exists so API-only issuers can create
+Invoices without the admin panel. See `docs/api-contract.md` for the
+current contract — treat every "API is unchanged" statement below as
+historical context for the admin-panel work, not the current contract.
+
+One deviation from the spec below (admin panel, still accurate): the "hide once
+generated" and edit-lock rules can't check `Invoice.status` alone (an
+invoice-backed reference doesn't flip the invoice to `'paid'` until it's
+actually collected) - both now check `Invoice::paymentReference()->exists()`
+directly. The edit-lock also had to move from `InvoicePolicy::update()` into
+`InvoicesController::edit()`/`update()` - `BasePolicy::before()` short-circuits
+the policy for admin-permission holders, so a check placed in the policy
+method never ran for them.
 Backend: Laraship (`backend/`), module `Corals\Modules\PaymentGateway`.
 Builds on `docs/superpowers/specs/2026-08-02-issuer-admin-payment-reference-design.md`
 (implemented) — reuses `Issuer::isAdminUser()`/`isAccessibleBy()`/`accessibleBy()`
@@ -23,12 +41,13 @@ marked paid once collected.
 
 ## Scope
 
-**Admin panel only.** `POST /payment-references` (the public API,
-`docs/api-contract.md`) is unchanged — it keeps accepting `customer_id`
-exactly as documented today. No contract change, no `apps/pos` change, no
-break for issuers integrating directly against the API. `invoice_id` is a
-purely internal column, never exposed on the API's `PaymentReference`
-response shape.
+**Admin panel only, as originally scoped.** `POST /payment-references` (the
+public API, `docs/api-contract.md`) was meant to stay unchanged — keeping
+`customer_id` exactly as documented then, `invoice_id` staying a purely
+internal column never exposed on the API's `PaymentReference` response
+shape. **This was superseded** — see the status note at the top of this
+file and `docs/api-contract.md` for the current contract, where
+`invoice_id` replaced `customer_id` on the public API as well.
 
 ## Data model
 
@@ -233,8 +252,9 @@ pattern), covering:
    /transactions`) flips the linked Invoice's `status` to `'paid'`;
    collecting against a non-invoice (API-generated) reference is
    unaffected (no invoice to update).
-7. `POST /payment-references` (the API) is untouched: still accepts
-   `customer_id` as documented, produces a reference with `invoice_id`
-   null, and existing API tests
-   (`PaymentReferenceValidationTest`, `CollectFlowTest`) keep passing
-   unmodified.
+7. Superseded — `POST /payment-references` (the API) was originally meant
+   to stay untouched (still accepting `customer_id`, producing a reference
+   with `invoice_id` null); it was later changed to require `invoice_id`
+   the same as the admin panel. See `docs/api-contract.md` and
+   `PaymentReferenceValidationTest`/`CollectFlowTest` for the current
+   behavior.

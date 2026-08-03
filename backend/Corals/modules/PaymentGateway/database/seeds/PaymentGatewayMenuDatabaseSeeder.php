@@ -31,6 +31,17 @@ class PaymentGatewayMenuDatabaseSeeder extends Seeder
                 [
                     'parent_id' => $paymentgateway_menu_id,
                     'key' => null,
+                    'url' => config('paymentgateway.models.issuer.resource_url'),
+                    'active_menu_url' => config('paymentgateway.models.issuer.resource_url') . '*',
+                    'name' => 'Issuers',
+                    'description' => 'Issuers List Menu Item',
+                    'icon' => 'fa fa-stack-overflow',
+                    'target' => null, 'roles' => '["1"]',
+                    'order' => 0,
+                ],
+                [
+                    'parent_id' => $paymentgateway_menu_id,
+                    'key' => null,
                     'url' => config('paymentgateway.models.store.resource_url'),
                     'active_menu_url' => config('paymentgateway.models.store.resource_url') . '*',
                     'name' => 'Stores',

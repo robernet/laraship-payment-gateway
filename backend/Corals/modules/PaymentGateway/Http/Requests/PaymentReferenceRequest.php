@@ -3,9 +3,7 @@
 namespace Corals\Modules\PaymentGateway\Http\Requests;
 
 use Corals\Foundation\Http\Requests\BaseRequest;
-use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
-use Illuminate\Contracts\Validation\Validator;
 
 class PaymentReferenceRequest extends BaseRequest
 {
@@ -34,22 +32,11 @@ class PaymentReferenceRequest extends BaseRequest
     }
 
     /**
-     * The web create form submits a decimal peso amount as amount_input
-     * (e.g. "150.00") - convert it to the minor-units amount field the shared
-     * rules/service expect before validation runs. The API never sends
-     * amount_input, so this is a no-op for API requests.
-     */
-    public function validationData()
-    {
-        if ($this->isStore() && $this->filled('amount_input') && !$this->filled('amount')) {
-            $this->merge(['amount' => (int) round((float) $this->input('amount_input') * 100)]);
-        }
-
-        return parent::validationData();
-    }
-
-    /**
      * Get the validation rules that apply to the request.
+     *
+     * Both the web admin form and the API generate from an Invoice
+     * (invoice_id) - it supplies the issuer, identifier, amount, currency,
+     * and due date, so none of those are separate inputs here.
      *
      * @return array
      */
@@ -60,11 +47,8 @@ class PaymentReferenceRequest extends BaseRequest
 
         if ($this->isStore()) {
             $rules = array_merge($rules, [
-                'issuer_id' => ['required'],
-                'customer_id' => ['required', 'string', 'max:22'],
-                'amount' => ['sometimes', 'integer', 'min:1'],
-                'currency' => ['required_with:amount', 'string', 'size:3'],
-                'due_date' => ['sometimes', 'date'],
+                'invoice_id' => ['required'],
+
                 // AutoPay - schema/validation only (Phase 4 scaffold, no live gateway wiring yet).
                 'autopay_enabled' => ['sometimes', 'boolean'],
                 'autopay_payment_number' => ['required_with:autopay_frequency_days', 'integer', 'min:1'],
@@ -73,34 +57,5 @@ class PaymentReferenceRequest extends BaseRequest
         }
 
         return $rules;
-    }
-
-    /**
-     * amount/due_date are required when the issuer's own reference_layout declares
-     * amount_length/embed_due_date - see docs/api-contract.md. Enforced here (not in
-     * ReferenceGeneratorService) so a failure is a proper 422 validation error, not a
-     * generic exception.
-     */
-    public function withValidator(Validator $validator)
-    {
-        if (!$this->isStore()) {
-            return;
-        }
-
-        $validator->after(function (Validator $validator) {
-            $issuer = Issuer::findByHash($this->get('issuer_id'));
-
-            if (!$issuer) {
-                return;
-            }
-
-            if (data_get($issuer->reference_layout, 'amount_length') && !$this->filled('amount')) {
-                $validator->errors()->add('amount', trans('validation.required', ['attribute' => 'amount']));
-            }
-
-            if (data_get($issuer->reference_layout, 'embed_due_date') && !$this->filled('due_date')) {
-                $validator->errors()->add('due_date', trans('validation.required', ['attribute' => 'due date']));
-            }
-        });
     }
 }

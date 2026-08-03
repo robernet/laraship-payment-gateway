@@ -7,7 +7,7 @@ use Corals\Modules\PaymentGateway\Classes\BarcodeGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\PayFormatGeneratorService;
 use Corals\Modules\PaymentGateway\Classes\ReferenceGeneratorService;
 use Corals\Modules\PaymentGateway\Http\Requests\PaymentReferenceRequest;
-use Corals\Modules\PaymentGateway\Models\Issuer;
+use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
 use Corals\Modules\PaymentGateway\Services\PaymentReferenceService;
 use Corals\Modules\PaymentGateway\Transformers\API\PaymentReferencePresenter;
@@ -30,11 +30,13 @@ class PaymentReferencesController extends APIBaseController
     }
 
     /**
-     * Generate a Reference for an issuer/customer, with its barcode + pay-format
-     * artifacts. Mode ("online" vs "batch") is derived entirely from the issuer's
+     * Generate a Reference for an Invoice, with its barcode + pay-format
+     * artifacts. `invoice_id` is the unique identifier generation is keyed
+     * on - it supplies the issuer, identifier, amount, currency, and due
+     * date. Mode ("online" vs "batch") is derived entirely from the issuer's
      * own reference_layout - not a client choice.
      *
-     * Non-admin callers must be linked to the target issuer (paymentgateway_issuer_users) -
+     * Non-admin callers must be linked to the invoice's issuer (paymentgateway_issuer_users) -
      * we are the Reference Generator service now, offered to issuers directly, not just admins.
      *
      * @param PaymentReferenceRequest $request
@@ -47,22 +49,22 @@ class PaymentReferencesController extends APIBaseController
         PayFormatGeneratorService $payFormatGenerator
     ) {
         try {
-            $issuer = Issuer::findByHash($request->get('issuer_id'));
+            $invoice = Invoice::findByHash($request->get('invoice_id'));
 
-            if (!$issuer) {
-                throw ValidationException::withMessages(['issuer_id' => [trans('Corals::messages.errors.not_found')]]);
+            if (!$invoice) {
+                throw ValidationException::withMessages(['invoice_id' => [trans('Corals::messages.errors.not_found')]]);
             }
 
             $user = $request->user();
 
-            abort_if(!$issuer->isAccessibleBy($user), 403, 'This user is not linked to the requested issuer.');
+            abort_if(!$invoice->issuer->isAccessibleBy($user), 403, 'This user is not linked to the requested issuer.');
+
+            if ($invoice->paymentReference()->exists()) {
+                throw ValidationException::withMessages(['invoice_id' => ['This invoice already has a Payment Reference.']]);
+            }
 
             $paymentReference = $this->paymentReferenceService->generateWithArtifacts(
-                $issuer,
-                $request->get('customer_id'),
-                $request->get('amount'),
-                $request->get('currency'),
-                $request->get('due_date'),
+                $invoice,
                 $generator,
                 $barcodeGenerator,
                 $payFormatGenerator,

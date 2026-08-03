@@ -7,7 +7,7 @@ use Corals\Foundation\Transformers\PresentableTrait;
 use Corals\Modules\PaymentGateway\Traits\ApiHashTrait;
 use Spatie\Activitylog\Traits\LogsActivity;
 
-class PaymentReference extends BaseModel
+class Invoice extends BaseModel
 {
     use ApiHashTrait;
     use PresentableTrait;
@@ -17,7 +17,7 @@ class PaymentReference extends BaseModel
      *  Model configuration.
      * @var string
      */
-    public $config = 'paymentgateway.models.payment_reference';
+    public $config = 'paymentgateway.models.invoice';
 
     protected $casts = [
         'properties' => 'json',
@@ -25,7 +25,7 @@ class PaymentReference extends BaseModel
         'due_date' => 'date',
     ];
 
-    protected $table = 'paymentgateway_payment_references';
+    protected $table = 'paymentgateway_invoices';
 
     protected $guarded = ['id'];
 
@@ -34,13 +34,8 @@ class PaymentReference extends BaseModel
         return $this->belongsTo(Issuer::class, 'issuer_id');
     }
 
-    public function invoice()
+    public function paymentReference()
     {
-        return $this->belongsTo(Invoice::class, 'invoice_id');
-    }
-
-    public function transactions()
-    {
-        return $this->hasMany(Transaction::class, 'payment_reference_id');
+        return $this->hasOne(PaymentReference::class, 'invoice_id');
     }
 }

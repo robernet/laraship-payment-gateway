@@ -71,6 +71,10 @@ class TransactionsController extends APIBaseController
 
             $paymentReference->update(['status' => 'collected']);
 
+            if ($paymentReference->invoice_id) {
+                $paymentReference->invoice->update(['status' => 'paid']);
+            }
+
             return apiResponse($this->transactionService->getModelDetails(), trans('Corals::messages.success.created', ['item' => 'transaction']));
         } catch (\Exception $exception) {
             return apiExceptionResponse($exception);

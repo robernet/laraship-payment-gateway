@@ -9,6 +9,10 @@ return [
         'title' => 'Issuers',
         'title_singular' => 'Issuer',
     ],
+    'invoice' => [
+        'title' => 'Invoices',
+        'title_singular' => 'Invoice',
+    ],
     'payment_reference' => [
         'title' => 'Payment References',
         'title_singular' => 'Payment Reference',

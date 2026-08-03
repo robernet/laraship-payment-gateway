@@ -67,18 +67,35 @@ Codes: `422` validation, `401` auth, `403` forbidden, `404` not found, `500` ser
   - `reference_layout` (object): `identifier_length` (int, required), `amount_length` (int, optional — presence makes this issuer batch-mode for amount), `embed_due_date` (bool, optional — presence makes this issuer batch-mode for due date)
   - `reject_late_payment` (bool) — when true and a reference's `due_date` has passed, collection is rejected (`422`); when false, overdue references remain collectible (due date is informational only)
 
+### Invoice
+- `GET /invoices` · `POST /invoices` · `GET /invoices/{hashid}` — no `PATCH`/`DELETE` on the API. Editing an invoice is blocked everywhere (admin panel included) once it has a Payment Reference — see below.
+- `POST /invoices` — `{issuer_id, customer_id, amount_minor, currency, due_date, description?}`. `customer_id` here is a free-text record-keeping label (who the invoice is for) — it is **not** the identifier used to generate a Payment Reference; the invoice's own `id` (hashid) is.
+- `GET /invoices` — optional `?status=unpaid|paid` filter. Scoped to invoices for issuers the caller is linked to (admins see all).
+- Fields:
+  - `id` (hashid, string)
+  - `issuer_id` (hashid, string)
+  - `customer_id` (string) — record-keeping only
+  - `amount_minor` (int, minor units)
+  - `currency` (string)
+  - `due_date` (date)
+  - `description` (string, nullable)
+  - `status` (`unpaid`|`paid`) — server-set; flips to `paid` when the Payment Reference generated from it is collected (see below)
+- **Authorization**: same rule as PaymentReference below — non-admin callers must be linked to the target issuer via `paymentgateway_issuer_users` (`403` otherwise).
+- An Invoice backs **at most one** Payment Reference. `POST /payment-references` against an `invoice_id` that already has one is rejected (`422`).
+
 ### PaymentReference
-- `POST /payment-references` (generate) — `{issuer_id, customer_id, amount?, currency?, due_date?}`. `amount`/`due_date` are **required** if the issuer's `reference_layout` declares `amount_length`/`embed_due_date` respectively (validated at generation time, not by a client-chosen mode). Synchronously renders the barcode + pay-format artifacts before responding — no polling, no `artifacts_status` field (see Phase 3 note below).
+- `POST /payment-references` (generate) — `{invoice_id, autopay_enabled?, autopay_payment_number?, autopay_frequency_days?}`. `invoice_id` (the Invoice's hashid) is the identifier a reference is generated from — it replaces the old free-typed `customer_id`, since an invoice is guaranteed unique where a client-typed string wasn't. The issuer, the reference's identifier, `amount`, `currency`, and `due_date` are all derived from the Invoice record, not passed separately. Synchronously renders the barcode + pay-format artifacts before responding — no polling, no `artifacts_status` field (see Phase 3 note below).
 - `GET /payment-references/lookup/{reference}` — POS lookup by the raw Reference **string**, not the hashid.
 - Fields:
   - `id` (hashid, string)
   - `reference` (string) — the domain Reference, max 29 digits
   - `issuer_id` (hashid, string)
+  - `invoice_id` (hashid, string) — the Invoice this reference was generated from
   - `integration_mode` (`online`|`batch`) — server-derived from the issuer's layout, never client-supplied
   - `status` (`pending`|`collected`)
-  - `amount` (int, minor units, nullable)
-  - `currency` (string, nullable)
-  - `due_date` (date, nullable)
+  - `amount` (int, minor units) — always set, from the linked Invoice
+  - `currency` (string)
+  - `due_date` (date)
   - `folio` (string) — internally-generated tracking id, format `FOL-YYYYMMDD-XXXXXX`
   - `barcode_url` (string) — public URL to a Code 128 PNG barcode of the reference
   - `pay_format_url` (string) — public URL to a rendered payment-slip PDF
@@ -86,7 +103,8 @@ Codes: `422` validation, `401` auth, `403` forbidden, `404` not found, `500` ser
   - `autopay_enabled` (bool) — whether recurring AutoPay is configured for this reference (Phase 4 scaffold — schedules are recorded but never actually charged yet)
   - `autopay_payment_number` (int, nullable) — number of AutoPay charges; required together with `autopay_frequency_days`
   - `autopay_frequency_days` (int, nullable) — days between AutoPay charges; required together with `autopay_payment_number`
-- Collection-time behavior (enforced on `POST /transactions`, not a field): if `amount` is set on the reference, the collected amount must match **exactly** (`422` otherwise); if unset, any positive amount is accepted (partial or full). If `due_date` has passed and the issuer's `reject_late_payment` is true, collection is rejected (`422`).
+- Whether the issuer's Reference **digits** embed the amount/due date (batch mode) vs just the identifier (online mode) is still derived purely from the issuer's own `reference_layout` (`amount_length`/`embed_due_date`) — independent of the fact that the linked Invoice always carries an amount and due date either way.
+- Collection-time behavior (enforced on `POST /transactions`, not a field): the collected amount must match the reference's `amount` **exactly** (`422` otherwise) — every reference generated via this endpoint is now Invoice-backed, so `amount` is always set. If `due_date` has passed and the issuer's `reject_late_payment` is true, collection is rejected (`422`). Collecting also flips the linked Invoice's `status` to `paid`.
 - **Authorization** (Phase 3): non-admin callers must be linked to the target issuer via `paymentgateway_issuer_users` (`403` otherwise) — we are the Reference Generator service, offered to issuers directly, not just admins. `clabe` and a legacy JWT/User-Pswd issuer-auth surface (for existing ClubPago-integrated issuers) are deliberately **not** implemented yet — see `docs/roadmap.md` for the open questions this raised.
 - **AutoPay scheduling** (Phase 4, scaffold only): setting `autopay_enabled` with `autopay_payment_number`/`autopay_frequency_days` records a row in an internal `paymentgateway_autopay_schedules` table (`status`, `next_charge_date`, `retry_count`) — this table has no API endpoint of its own and is not client-readable. No live card processor is wired to it yet; do not assume charges actually occur.
 

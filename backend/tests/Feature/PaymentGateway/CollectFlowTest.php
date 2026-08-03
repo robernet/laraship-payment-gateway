@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\PaymentGateway;
 
+use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\OperatorStore;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
@@ -98,10 +99,18 @@ class CollectFlowTest extends TestCase
 
         $headers = ['Authorization' => 'Bearer ' . $token];
 
-        // 2. Generate a reference (online mode - customer id only).
-        $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
-            'issuer_id' => $issuer->getHashedIdAttribute(),
+        // 2. Generate a reference from an Invoice (online mode - identifier only).
+        $invoice = Invoice::create([
+            'issuer_id' => $issuer->id,
             'customer_id' => '42',
+            'amount_minor' => 15230,
+            'currency' => 'MXN',
+            'due_date' => now()->addDays(10)->toDateString(),
+            'status' => 'unpaid',
+        ]);
+
+        $generate = $this->withHeaders($headers)->postJson($this->apiUrl('payment-references'), [
+            'invoice_id' => $invoice->getHashedIdAttribute(),
         ]);
 
         $generate->assertStatus(200);
