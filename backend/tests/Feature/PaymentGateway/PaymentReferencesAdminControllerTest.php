@@ -387,4 +387,18 @@ class PaymentReferencesAdminControllerTest extends TestCase
             'invoice_id' => $invoice->id,
         ]);
     }
+
+    #[Test]
+    public function create_page_renders_the_new_invoice_toggle_and_autopay_fields()
+    {
+        $admin = $this->admin('render-toggle');
+        $this->issuer('render-toggle');
+
+        $this->actingAs($admin)->get('/payment-references/create')
+            ->assertStatus(200)
+            ->assertSee('name="invoice_mode"', false)
+            ->assertSee('name="autopay_enabled"', false)
+            ->assertSee('name="autopay_payment_number"', false)
+            ->assertSee('name="autopay_frequency_days"', false);
+    }
 }
