@@ -7,5 +7,8 @@ export 'src/network/api_client.dart';
 export 'src/network/api_exception.dart';
 export 'src/models/paginated.dart';
 export 'src/models/money.dart';
+export 'src/models/payment_reference.dart';
+export 'src/models/transaction.dart';
+export 'src/models/shift.dart';
 export 'src/auth/auth_service.dart';
 export 'src/auth/token_store.dart';
