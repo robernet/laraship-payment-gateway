@@ -5,8 +5,7 @@ import 'token_store.dart';
 /// `createToken`); we store the returned plain-text token and attach it to
 /// every request. Logout revokes it server-side, then clears local storage.
 class AuthService {
-  AuthService({required this._api, required TokenStore tokens})
-    : _tokens = tokens;
+  AuthService({required this._api, required this._tokens});
 
   final ApiClient _api;
   final TokenStore _tokens;
@@ -40,9 +39,12 @@ class AuthService {
   String? _extractToken(Object? body) {
     if (body is Map) {
       final data = body['data'];
-      if (data is Map && data['token'] is String)
+      if (data is Map && data['token'] is String) {
         return data['token'] as String;
-      if (body['token'] is String) return body['token'] as String;
+      }
+      if (body['token'] is String) {
+        return body['token'] as String;
+      }
     }
     return null;
   }
