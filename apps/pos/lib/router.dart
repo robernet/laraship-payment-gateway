@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'features/auth/domain/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
+import 'features/payment_reference/presentation/reference_lookup_screen.dart';
 import 'features/shift/domain/shift_state.dart';
 import 'features/shift/presentation/open_shift_screen.dart';
 
@@ -30,8 +30,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/shift/open', builder: (context, state) => const OpenShiftScreen()),
       GoRoute(
         path: '/',
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('Shift open')),
+        builder: (context, state) => ReferenceLookupScreen(
+          onCollect: (reference) => context.push('/collect', extra: reference),
         ),
       ),
     ],
