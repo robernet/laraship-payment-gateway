@@ -37,6 +37,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    _storeId.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Operator Login')),
