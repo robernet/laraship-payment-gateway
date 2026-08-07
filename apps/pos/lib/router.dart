@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'features/auth/domain/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/shift/domain/shift_state.dart';
+import 'features/shift/presentation/close_shift_screen.dart';
 import 'features/shift/presentation/open_shift_screen.dart';
 import 'features/shift/presentation/shift_transactions_screen.dart';
 import 'features/payment_reference/presentation/reference_lookup_screen.dart';
@@ -62,6 +63,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/shift/transactions',
         builder: (context, state) => ShiftTransactionsScreen(
           onCloseShift: () => context.go('/shift/close'),
+        ),
+      ),
+      GoRoute(
+        path: '/shift/close',
+        builder: (context, state) => CloseShiftScreen(
+          onDone: () {
+            ref.read(shiftProvider.notifier).reset();
+            context.go('/');
+          },
         ),
       ),
     ],
