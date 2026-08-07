@@ -1,8 +1,10 @@
+import 'package:core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'features/auth/domain/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
+import 'features/collect/presentation/collect_confirm_screen.dart';
 import 'features/payment_reference/presentation/reference_lookup_screen.dart';
 import 'features/shift/domain/shift_state.dart';
 import 'features/shift/presentation/open_shift_screen.dart';
@@ -28,6 +30,14 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/shift/open', builder: (context, state) => const OpenShiftScreen()),
+      GoRoute(
+        path: '/collect',
+        builder: (context, state) => CollectConfirmScreen(
+          reference: state.extra! as PaymentReference,
+          onCollected: (reference, transaction) =>
+              context.go('/receipt', extra: (reference, transaction)),
+        ),
+      ),
       GoRoute(
         path: '/',
         builder: (context, state) => ReferenceLookupScreen(
