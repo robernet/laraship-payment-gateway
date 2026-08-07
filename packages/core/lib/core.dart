@@ -12,3 +12,5 @@ export 'src/models/transaction.dart';
 export 'src/models/shift.dart';
 export 'src/auth/auth_service.dart';
 export 'src/auth/token_store.dart';
+export 'src/paymentgateway/payment_gateway_service.dart';
+export 'src/paymentgateway/dio_payment_gateway_service.dart';

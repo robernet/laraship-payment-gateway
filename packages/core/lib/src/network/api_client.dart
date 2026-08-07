@@ -52,6 +52,12 @@ class ApiClient {
     return ApiClient._(dio);
   }
 
+  /// Test-only: wraps an already-configured [Dio] (e.g. one with a fake
+  /// [HttpClientAdapter]) directly, bypassing the token/401 interceptors —
+  /// those aren't under test when exercising a service's request/response
+  /// shape.
+  factory ApiClient.forTesting(Dio dio) => ApiClient._(dio);
+
   Future<T> getOne<T>(
     String path,
     T Function(Map<String, dynamic>) fromJson, {
