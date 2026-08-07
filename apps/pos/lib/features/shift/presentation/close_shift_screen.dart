@@ -37,6 +37,8 @@ class _CloseShiftScreenState extends ConsumerState<CloseShiftScreen> {
       final minor = (major * 100).round();
       final closed = await ref.read(shiftProvider.notifier).close(countedAmountMinor: minor);
       setState(() => _closed = closed);
+    } on FormatException {
+      setState(() => _error = 'Please enter a valid amount.');
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } finally {

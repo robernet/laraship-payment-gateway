@@ -1,4 +1,5 @@
 import 'package:core/core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,18 +13,30 @@ import 'features/payment_reference/presentation/reference_lookup_screen.dart';
 import 'features/collect/presentation/collect_confirm_screen.dart';
 import 'features/collect/presentation/receipt_screen.dart';
 
+/// Notifies go_router's `refreshListenable` on auth/shift changes so
+/// `redirect` re-evaluates without go_router disposing and rebuilding the
+/// whole GoRouter (and its Navigator) on every state change.
+class _RouterRefreshNotifier extends ChangeNotifier {
+  _RouterRefreshNotifier(Ref ref) {
+    ref.listen(authProvider, (_, _) => notifyListeners());
+    ref.listen(shiftProvider, (_, _) => notifyListeners());
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final session = ref.watch(authProvider);
-  final hasShift = ref.watch(shiftProvider).shift != null;
+  final refresh = _RouterRefreshNotifier(ref);
+  ref.onDispose(refresh.dispose);
 
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: refresh,
     redirect: (context, state) {
-      final loggedIn = session != null;
+      final loggedIn = ref.read(authProvider) != null;
       final loggingIn = state.matchedLocation == '/login';
       if (!loggedIn) return loggingIn ? null : '/login';
       if (loggingIn) return '/';
 
+      final hasShift = ref.read(shiftProvider).shift != null;
       final openingShift = state.matchedLocation == '/shift/open';
       if (!hasShift) return openingShift ? null : '/shift/open';
       if (openingShift) return '/';
