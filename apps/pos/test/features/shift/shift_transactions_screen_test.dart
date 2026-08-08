@@ -31,6 +31,7 @@ void main() {
       openedAt: DateTime.parse('2026-08-04T12:00:00.000Z'),
     );
     var closeTapped = false;
+    var backTapped = false;
     final container = ProviderContainer(
       overrides: [
         shiftProvider.overrideWith(() => _SeededShiftNotifier(ShiftState(shift: shift, transactions: [transaction]))),
@@ -41,7 +42,12 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(home: ShiftTransactionsScreen(onCloseShift: () => closeTapped = true)),
+        child: MaterialApp(
+          home: ShiftTransactionsScreen(
+            onCloseShift: () => closeTapped = true,
+            onBackToMain: () => backTapped = true,
+          ),
+        ),
       ),
     );
 
@@ -49,6 +55,9 @@ void main() {
 
     await tester.tap(find.byKey(const Key('shift_close_button')));
     expect(closeTapped, isTrue);
+
+    await tester.tap(find.byKey(const Key('back_to_main_button')));
+    expect(backTapped, isTrue);
   });
 
   testWidgets('shows an empty state when nothing has been collected yet', (tester) async {
@@ -68,7 +77,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(home: ShiftTransactionsScreen(onCloseShift: () {})),
+        child: MaterialApp(home: ShiftTransactionsScreen(onCloseShift: () {}, onBackToMain: () {})),
       ),
     );
 
