@@ -13,6 +13,8 @@ class ReferenceLookupNotifier extends Notifier<AsyncValue<PaymentReference>?> {
       () => ref.read(paymentGatewayServiceProvider).lookupReference(reference),
     );
   }
+
+  void reset() => state = null;
 }
 
 final referenceLookupProvider =

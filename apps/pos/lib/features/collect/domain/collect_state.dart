@@ -24,6 +24,8 @@ class CollectNotifier extends Notifier<AsyncValue<Transaction>?> {
       return transaction;
     });
   }
+
+  void reset() => state = null;
 }
 
 final collectProvider = NotifierProvider<CollectNotifier, AsyncValue<Transaction>?>(CollectNotifier.new);
