@@ -36,7 +36,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
-          home: ReferenceLookupScreen(onCollect: (reference) => collected = reference),
+          home: ReferenceLookupScreen(onCollect: (reference) => collected = reference, onBackToMain: () {}, onScanBarcode: () async => null),
         ),
       ),
     );
@@ -63,7 +63,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(home: ReferenceLookupScreen(onCollect: (_) {})),
+        child: MaterialApp(home: ReferenceLookupScreen(onCollect: (_) {}, onBackToMain: () {}, onScanBarcode: () async => null)),
       ),
     );
 
@@ -74,7 +74,7 @@ void main() {
     expect(find.text('Reference not found.'), findsOneWidget);
   });
 
-  testWidgets('an already-collected reference shows that state instead of a Collect button', (tester) async {
+  testWidgets('a non-pending reference informs the user, disables Collect, and offers back-to-main', (tester) async {
     final fake = FakePaymentGatewayService(lookupResult: _pending().copyWith(status: 'collected'));
     final container = ProviderContainer(
       overrides: [paymentGatewayServiceProvider.overrideWithValue(fake)],
@@ -84,7 +84,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(home: ReferenceLookupScreen(onCollect: (_) {})),
+        child: MaterialApp(home: ReferenceLookupScreen(onCollect: (_) {}, onBackToMain: () {}, onScanBarcode: () async => null)),
       ),
     );
 
@@ -92,7 +92,41 @@ void main() {
     await tester.tap(find.byKey(const Key('reference_submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('This reference has already been collected.'), findsOneWidget);
-    expect(find.byKey(const Key('reference_collect')), findsNothing);
+    expect(find.text('This reference cannot be collected (status: collected).'), findsOneWidget);
+    final collectButton = tester.widget<ElevatedButton>(find.byKey(const Key('reference_collect')));
+    expect(collectButton.onPressed, isNull);
+
+    await tester.tap(find.byKey(const Key('reference_reset_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('reference_amount_due')), findsNothing);
+    expect(find.byKey(const Key('reference_input')), findsOneWidget);
+  });
+
+  testWidgets('scanning a barcode fills the field and auto-submits the lookup', (tester) async {
+    final fake = FakePaymentGatewayService(lookupResult: _pending());
+    final container = ProviderContainer(
+      overrides: [paymentGatewayServiceProvider.overrideWithValue(fake)],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: ReferenceLookupScreen(
+            onCollect: (_) {},
+            onBackToMain: () {},
+            onScanBarcode: () async => '77700112340000019',
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('reference_scan_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('77700112340000019'), findsOneWidget);
+    expect(find.byKey(const Key('reference_amount_due')), findsOneWidget);
   });
 }

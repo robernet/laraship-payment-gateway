@@ -5,9 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/reference_lookup_state.dart';
 
 class ReferenceLookupScreen extends ConsumerStatefulWidget {
-  const ReferenceLookupScreen({super.key, required this.onCollect});
+  const ReferenceLookupScreen({
+    super.key,
+    required this.onCollect,
+    required this.onBackToMain,
+    required this.onScanBarcode,
+  });
 
   final void Function(PaymentReference reference) onCollect;
+  final VoidCallback onBackToMain;
+  final Future<String?> Function() onScanBarcode;
 
   @override
   ConsumerState<ReferenceLookupScreen> createState() => _ReferenceLookupScreenState();
@@ -22,12 +29,27 @@ class _ReferenceLookupScreenState extends ConsumerState<ReferenceLookupScreen> {
     super.dispose();
   }
 
+  Future<void> _scan() async {
+    final scanned = await widget.onScanBarcode();
+    if (scanned == null || scanned.isEmpty) return;
+    _reference.text = scanned;
+    ref.read(referenceLookupProvider.notifier).lookup(scanned);
+  }
+
   @override
   Widget build(BuildContext context) {
     final result = ref.watch(referenceLookupProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Look up reference')),
+      appBar: AppBar(
+        title: const Text('Look up reference'),
+        leading: IconButton(
+          key: const Key('back_to_main_button'),
+          icon: const Icon(Icons.home),
+          tooltip: 'Back to main',
+          onPressed: widget.onBackToMain,
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -37,10 +59,21 @@ class _ReferenceLookupScreenState extends ConsumerState<ReferenceLookupScreen> {
               key: const Key('reference_input'),
               decoration: const InputDecoration(labelText: 'Payment reference'),
             ),
-            ElevatedButton(
-              key: const Key('reference_submit'),
-              onPressed: () => ref.read(referenceLookupProvider.notifier).lookup(_reference.text),
-              child: const Text('Look up'),
+            Row(
+              children: [
+                ElevatedButton(
+                  key: const Key('reference_submit'),
+                  onPressed: () => ref.read(referenceLookupProvider.notifier).lookup(_reference.text),
+                  child: const Text('Look up'),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  key: const Key('reference_scan_button'),
+                  icon: const Icon(Icons.qr_code_scanner),
+                  tooltip: 'Scan barcode',
+                  onPressed: _scan,
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             if (result != null) _buildResult(result),
@@ -62,19 +95,31 @@ class _ReferenceLookupScreenState extends ConsumerState<ReferenceLookupScreen> {
         return Text(message);
       },
       data: (reference) {
-        if (reference.status == 'collected') {
-          return const Text('This reference has already been collected.');
-        }
+        final isPending = reference.status == 'pending';
         return Column(
           key: const Key('reference_amount_due'),
           children: [
             Text('Amount due: ${reference.amount} ${reference.currency}'),
             Text('Due date: ${reference.dueDate.toIso8601String()}'),
+            if (!isPending)
+              Text(
+                'This reference cannot be collected (status: ${reference.status}).',
+                key: const Key('reference_status_message'),
+              ),
             ElevatedButton(
               key: const Key('reference_collect'),
-              onPressed: () => widget.onCollect(reference),
+              onPressed: isPending ? () => widget.onCollect(reference) : null,
               child: const Text('Collect'),
             ),
+            if (!isPending)
+              ElevatedButton(
+                key: const Key('reference_reset_button'),
+                onPressed: () {
+                  ref.read(referenceLookupProvider.notifier).reset();
+                  _reference.clear();
+                },
+                child: const Text('Look up another reference'),
+              ),
           ],
         );
       },

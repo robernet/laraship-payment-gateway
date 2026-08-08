@@ -5,11 +5,14 @@ import 'package:go_router/go_router.dart';
 
 import 'features/auth/domain/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
+import 'features/main/presentation/main_screen.dart';
 import 'features/shift/domain/shift_state.dart';
 import 'features/shift/presentation/close_shift_screen.dart';
 import 'features/shift/presentation/open_shift_screen.dart';
 import 'features/shift/presentation/shift_transactions_screen.dart';
+import 'features/payment_reference/domain/reference_lookup_state.dart';
 import 'features/payment_reference/presentation/reference_lookup_screen.dart';
+import 'features/collect/domain/collect_state.dart';
 import 'features/collect/presentation/collect_confirm_screen.dart';
 import 'features/collect/presentation/receipt_screen.dart';
 
@@ -48,8 +51,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/shift/open', builder: (context, state) => const OpenShiftScreen()),
       GoRoute(
         path: '/',
+        builder: (context, state) => MainScreen(
+          onLookupReference: () {
+            ref.read(referenceLookupProvider.notifier).reset();
+            context.go('/reference-lookup');
+          },
+          onShiftTransactions: () => context.go('/shift/transactions'),
+        ),
+      ),
+      GoRoute(
+        path: '/reference-lookup',
         builder: (context, state) => ReferenceLookupScreen(
-          onCollect: (reference) => context.push('/collect', extra: reference),
+          onCollect: (reference) {
+            ref.read(collectProvider.notifier).reset();
+            context.push('/collect', extra: reference);
+          },
+          onBackToMain: () => context.go('/'),
+          onScanBarcode: () async => null,
         ),
       ),
       GoRoute(
@@ -58,6 +76,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           reference: state.extra! as PaymentReference,
           onCollected: (reference, transaction) =>
               context.go('/receipt', extra: (reference, transaction)),
+          onBackToMain: () => context.go('/'),
         ),
       ),
       GoRoute(
@@ -67,7 +86,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           return ReceiptScreen(
             reference: reference,
             transaction: transaction,
-            onCollectAnother: () => context.go('/'),
+            onCollectAnother: () {
+              ref.read(referenceLookupProvider.notifier).reset();
+              context.go('/reference-lookup');
+            },
             onViewShift: () => context.go('/shift/transactions'),
           );
         },
@@ -76,6 +98,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/shift/transactions',
         builder: (context, state) => ShiftTransactionsScreen(
           onCloseShift: () => context.go('/shift/close'),
+          onBackToMain: () => context.go('/'),
         ),
       ),
       GoRoute(
