@@ -12,6 +12,7 @@ import 'features/shift/presentation/open_shift_screen.dart';
 import 'features/shift/presentation/shift_transactions_screen.dart';
 import 'features/payment_reference/domain/reference_lookup_state.dart';
 import 'features/payment_reference/presentation/reference_lookup_screen.dart';
+import 'features/payment_reference/presentation/barcode_scan_screen.dart';
 import 'features/collect/domain/collect_state.dart';
 import 'features/collect/presentation/collect_confirm_screen.dart';
 import 'features/collect/presentation/receipt_screen.dart';
@@ -67,8 +68,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             context.push('/collect', extra: reference);
           },
           onBackToMain: () => context.go('/'),
-          onScanBarcode: () async => null,
+          onScanBarcode: () => context.push<String>('/reference-lookup/scan'),
         ),
+      ),
+      GoRoute(
+        path: '/reference-lookup/scan',
+        builder: (context, state) => const BarcodeScanScreen(),
       ),
       GoRoute(
         path: '/collect',
