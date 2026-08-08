@@ -49,6 +49,7 @@ void main() {
           home: CollectConfirmScreen(
             reference: _reference,
             onCollected: (reference, txn) => collected = (reference, txn),
+            onBackToMain: () {},
           ),
         ),
       ),
@@ -80,14 +81,16 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(home: CollectConfirmScreen(reference: _reference, onCollected: (_, _) {})),
+        child: MaterialApp(
+          home: CollectConfirmScreen(reference: _reference, onCollected: (_, _) {}, onBackToMain: () {}),
+        ),
       ),
     );
 
     await tester.tap(find.byKey(const Key('collect_confirm')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('collect_error')), findsOneWidget);
+    expect(find.text('The collected amount does not match the reference amount.'), findsOneWidget);
     expect(container.read(shiftProvider).transactions, isEmpty);
   });
 }
