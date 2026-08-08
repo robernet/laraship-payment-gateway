@@ -26,8 +26,10 @@ Collections carry pagination in `meta`.
 
 ## Error envelope
 ```json
-{ "message": "Human-readable message", "errors": { "field": ["reason"] } }
+{ "status": "error", "message": "Human-readable message", "data": { "errors": { "field": ["reason"] } } }
 ```
+`errors` is nested under `data` — a platform-wide shape from Corals core's `apiExceptionResponse()` (vendor-managed, not something a module/endpoint can change). `message` is often a generic wrapper (e.g. Laravel's default "The given data was invalid" for any `ValidationException`); prefer the field-specific text in `data.errors` when present.
+
 Codes: `422` validation, `401` auth, `403` forbidden, `404` not found, `500` server.
 
 ## Pagination (list endpoints)
