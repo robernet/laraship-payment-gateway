@@ -3,7 +3,7 @@
 Single source of truth for the HTTP boundary between the Laraship backend and any decoupled client (Flutter / SPA). Change this file **first**; both sides follow it. Import it from the root `CLAUDE.md` (`@docs/api-contract.md`) so it is always in context.
 
 ## Base
-- Base URL from environment. Never hardcode.
+- Base URL comes from a bundled config asset, not a literal in Dart source — each app declares `assets/config/api_config.json` (`{ "api_base": "<url>" }`) in its `pubspec.yaml`, loads it at startup before `runApp`, and passes the value into its `ApiClient`. Edit the JSON file per environment/machine; never hardcode the URL directly in a `.dart` file.
 - Version prefix: `/api/v1` (follow existing routes if they differ).
 - JSON only. Requests send `Accept: application/json`.
 
@@ -26,8 +26,10 @@ Collections carry pagination in `meta`.
 
 ## Error envelope
 ```json
-{ "message": "Human-readable message", "errors": { "field": ["reason"] } }
+{ "status": "error", "message": "Human-readable message", "data": { "errors": { "field": ["reason"] } } }
 ```
+`errors` is nested under `data` — a platform-wide shape from Corals core's `apiExceptionResponse()` (vendor-managed, not something a module/endpoint can change). `message` is often a generic wrapper (e.g. Laravel's default "The given data was invalid" for any `ValidationException`); prefer the field-specific text in `data.errors` when present.
+
 Codes: `422` validation, `401` auth, `403` forbidden, `404` not found, `500` server.
 
 ## Pagination (list endpoints)

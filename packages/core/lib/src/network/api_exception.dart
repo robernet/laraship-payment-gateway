@@ -27,7 +27,12 @@ class ApiException implements Exception {
   factory ApiException.fromResponse(int? status, Object? body) {
     if (body is Map<String, dynamic>) {
       final parsed = <String, List<String>>{};
-      final raw = body['errors'];
+      // Laravel's apiExceptionResponse() nests validation errors under
+      // `data.errors`, not top-level `errors` as docs/api-contract.md
+      // describes - a platform-wide (vendor, non-module) response shape, so
+      // this reads the real one rather than the documented one.
+      final data = body['data'];
+      final raw = body['errors'] ?? (data is Map ? data['errors'] : null);
       if (raw is Map) {
         raw.forEach((key, value) {
           if (value is List) {

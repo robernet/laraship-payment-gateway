@@ -11,7 +11,7 @@ Imported by every app's `CLAUDE.md`. Holds the rules common to all Flutter clien
 ## Data & network layer
 - The resource identifier is `id` — a **Hashid string**. Never expect or send integer ids.
 - Deserialize against the contract's success envelope; handle the error format centrally in a Dio interceptor.
-- Base URL and version from `--dart-define`. Attach the Sanctum bearer token via interceptor; on `401` clear the token and route to login — Sanctum tokens don't refresh.
+- Base URL from `assets/config/api_config.json` (bundled, loaded at startup — see `docs/api-contract.md`); version is a fixed `/api/v1` prefix in `ApiClient`. Attach the Sanctum bearer token via interceptor; on `401` clear the token and route to login — Sanctum tokens don't refresh.
 - Money arrives as integer minor units + `currency`; format for display only, never store as double.
 
 ## State management
@@ -29,7 +29,7 @@ Each app declares a vendored, read-only reference kit in its `ui-kit.md` (with a
 - Keep each app's `lib/` clean and deduplicated.
 
 ## Commands (run inside an app dir)
-- Run: `flutter run --dart-define=API_BASE=...`
+- Run: `flutter run` (edit `assets/config/api_config.json` for a different backend URL, then hot-restart)
 - Analyze: `flutter analyze` — clean before commit.
 - Test: `flutter test`
 - Codegen after model changes: `dart run build_runner build --delete-conflicting-outputs`

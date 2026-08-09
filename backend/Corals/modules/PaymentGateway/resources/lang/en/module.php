@@ -33,6 +33,8 @@ return [
     'payment_reference' => [
         'title' => 'Payment References',
         'title_singular' => 'Payment Reference',
+        'use_existing_invoice' => 'Use existing invoice',
+        'new_invoice' => 'New invoice',
     ],
     'transaction' => [
         'title' => 'Transactions',
