@@ -119,4 +119,68 @@ class BranchAuthTest extends TestCase
         $this->assertContains('branch:' . $branch->getHashedIdAttribute(), $response->json('data.abilities'));
         $this->assertContains('pos:' . $pos->getHashedIdAttribute(), $response->json('data.abilities'));
     }
+
+    #[Test]
+    public function login_with_an_unknown_branch_id_is_rejected()
+    {
+        $operator = User::create([
+            'name' => 'Unknown Branch Op',
+            'email' => 'unknown-branch-op@example.test',
+            'password' => 'secret-password',
+        ]);
+
+        $this->postJson($this->apiUrl('pos/login'), [
+            'email' => 'unknown-branch-op@example.test',
+            'password' => 'secret-password',
+            'branch_id' => 'not-a-real-hashid',
+        ])->assertStatus(422);
+    }
+
+    #[Test]
+    public function device_login_with_a_branchless_pos_is_rejected()
+    {
+        $store = Store::create(['name' => 'Branchless Co']);
+
+        $pos = Pos::create([
+            'store_id' => $store->id,
+            'branch_id' => null,
+            'name' => 'Branchless Till',
+            'code' => 'BRANCHLESS-TILL-1',
+        ]);
+        $plainSecret = $pos->regenerateDeviceSecret();
+
+        $this->postJson($this->apiUrl('pos/device-login'), [
+            'code' => 'BRANCHLESS-TILL-1',
+            'device_secret' => $plainSecret,
+        ])->assertStatus(422);
+    }
+
+    #[Test]
+    public function a_branch_scoped_token_cannot_open_a_shift_in_a_different_stores_branch()
+    {
+        $storeX = Store::create(['name' => 'Store X']);
+        $storeY = Store::create(['name' => 'Store Y']);
+        $branchX = Branch::create(['store_id' => $storeX->id, 'name' => 'Branch X']);
+        $branchY = Branch::create(['store_id' => $storeY->id, 'name' => 'Branch Y']);
+
+        $operator = User::create([
+            'name' => 'Cross Store Op',
+            'email' => 'cross-store-op@example.test',
+            'password' => 'secret-password',
+        ]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branchX->id]);
+
+        $loginResponse = $this->postJson($this->apiUrl('pos/login'), [
+            'email' => 'cross-store-op@example.test',
+            'password' => 'secret-password',
+            'branch_id' => $branchX->getHashedIdAttribute(),
+        ]);
+
+        $token = $loginResponse->json('data.token');
+
+        $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson($this->apiUrl('shifts'), [
+                'branch_id' => $branchY->getHashedIdAttribute(),
+            ])->assertStatus(403);
+    }
 }

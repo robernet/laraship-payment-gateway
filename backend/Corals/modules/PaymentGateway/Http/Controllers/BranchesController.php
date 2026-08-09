@@ -100,11 +100,7 @@ class BranchesController extends BaseController
     public function update(BranchRequest $request, Branch $branch)
     {
         try {
-            $store = Store::findByHash($request->get('store_id'));
-
-            abort_if(!$store, 404);
-
-            $this->branchService->update($request, $branch, ['store_id' => $store->id]);
+            $this->branchService->update($request, $branch);
 
             flash(trans('Corals::messages.success.updated', ['item' => $this->title_singular]))->success();
         } catch (\Exception $exception) {
