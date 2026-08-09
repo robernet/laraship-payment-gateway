@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\PaymentGateway;
 
+use Corals\Modules\PaymentGateway\Models\Branch;
 use Corals\Modules\PaymentGateway\Models\Pos;
 use Corals\Modules\PaymentGateway\Models\Store;
 use Corals\User\Models\User;
@@ -65,19 +66,20 @@ class PosAdminControllerTest extends TestCase
     }
 
     #[Test]
-    public function admin_can_create_list_and_view_a_pos_linked_to_a_store()
+    public function admin_can_create_list_and_view_a_pos_linked_to_a_branch()
     {
         $admin = $this->admin('crud');
         $store = Store::create(['name' => 'Downtown Store']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Downtown Branch']);
 
         $this->actingAs($admin)->get('/pos/create')
             ->assertStatus(200)
-            ->assertSee($store->getHashedIdAttribute());
+            ->assertSee($branch->getHashedIdAttribute());
 
         $this->actingAs($admin)->get('/pos')->assertStatus(200);
 
         $response = $this->actingAs($admin)->post('/pos', [
-            'store_id' => $store->getHashedIdAttribute(),
+            'branch_id' => $branch->getHashedIdAttribute(),
             'name' => 'Register 1',
             'code' => 'REG-001',
         ]);
@@ -86,12 +88,15 @@ class PosAdminControllerTest extends TestCase
 
         $pos = Pos::query()->where('code', 'REG-001')->firstOrFail();
         $this->assertSame('Register 1', $pos->name);
+        $this->assertSame($branch->id, $pos->branch_id);
+        // store_id is denormalized from the branch's store.
         $this->assertSame($store->id, $pos->store_id);
 
         $this->actingAs($admin)->get('/pos/' . $pos->getHashedIdAttribute())
             ->assertStatus(200)
             ->assertSee('Register 1')
             ->assertSee('REG-001')
+            // The POS show page renders the denormalized store name.
             ->assertSee('Downtown Store');
     }
 
@@ -100,11 +105,12 @@ class PosAdminControllerTest extends TestCase
     {
         $admin = $this->admin('dup-code');
         $store = Store::create(['name' => 'Duplicate Store']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Main']);
 
-        Pos::create(['store_id' => $store->id, 'name' => 'Register A', 'code' => 'DUP-001']);
+        Pos::create(['store_id' => $store->id, 'branch_id' => $branch->id, 'name' => 'Register A', 'code' => 'DUP-001']);
 
         $response = $this->actingAs($admin)->post('/pos', [
-            'store_id' => $store->getHashedIdAttribute(),
+            'branch_id' => $branch->getHashedIdAttribute(),
             'name' => 'Register B',
             'code' => 'DUP-001',
         ]);
@@ -128,31 +134,33 @@ class PosAdminControllerTest extends TestCase
     }
 
     #[Test]
-    public function store_show_page_lists_its_terminals_with_credential_actions()
+    public function branch_show_page_lists_its_terminals_with_credential_actions()
     {
-        $admin = $this->admin('store-panel');
+        $admin = $this->admin('branch-panel');
         $store = Store::create(['name' => 'Panel Store']);
-        $terminal = Pos::create(['store_id' => $store->id, 'name' => 'Caja 1', 'code' => 'PANEL-001']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Panel Branch']);
+        $terminal = Pos::create(['store_id' => $store->id, 'branch_id' => $branch->id, 'name' => 'Caja 1', 'code' => 'PANEL-001']);
 
-        // Terminal from a different store must not leak into this store's panel.
-        $otherStore = Store::create(['name' => 'Other Store']);
-        Pos::create(['store_id' => $otherStore->id, 'name' => 'Caja X', 'code' => 'OTHER-001']);
+        // Terminal from a different branch must not leak into this branch's panel.
+        $otherBranch = Branch::create(['store_id' => $store->id, 'name' => 'Other Branch']);
+        Pos::create(['store_id' => $store->id, 'branch_id' => $otherBranch->id, 'name' => 'Caja X', 'code' => 'OTHER-001']);
 
-        $this->actingAs($admin)->get('/stores/' . $store->getHashedIdAttribute())
+        $this->actingAs($admin)->get('/branches/' . $branch->getHashedIdAttribute())
             ->assertStatus(200)
             ->assertSee('Caja 1')
             ->assertSee('PANEL-001')
             ->assertDontSee('OTHER-001')
-            ->assertSee(route('pos.create', ['store_id' => $store->getHashedIdAttribute()]), false)
+            ->assertSee(route('pos.create', ['branch_id' => $branch->getHashedIdAttribute()]), false)
             ->assertSee(route('paymentgateway.pos.regenerate_secret', $terminal->getHashedIdAttribute()), false);
     }
 
     #[Test]
-    public function admin_can_regenerate_a_terminal_secret_and_delete_it_from_the_store_panel()
+    public function admin_can_regenerate_a_terminal_secret_and_delete_it_from_the_branch_panel()
     {
-        $admin = $this->admin('store-panel-actions');
+        $admin = $this->admin('branch-panel-actions');
         $store = Store::create(['name' => 'Actions Store']);
-        $terminal = Pos::create(['store_id' => $store->id, 'name' => 'Caja 1', 'code' => 'ACT-001']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Main']);
+        $terminal = Pos::create(['store_id' => $store->id, 'branch_id' => $branch->id, 'name' => 'Caja 1', 'code' => 'ACT-001']);
         $originalSecret = $terminal->device_secret;
 
         $this->actingAs($admin)

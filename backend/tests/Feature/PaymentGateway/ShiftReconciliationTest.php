@@ -2,9 +2,10 @@
 
 namespace Tests\Feature\PaymentGateway;
 
+use Corals\Modules\PaymentGateway\Models\Branch;
 use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
-use Corals\Modules\PaymentGateway\Models\OperatorStore;
+use Corals\Modules\PaymentGateway\Models\OperatorBranch;
 use Corals\Modules\PaymentGateway\Models\Store;
 use Corals\User\Models\User;
 use PHPUnit\Framework\Attributes\Test;
@@ -54,18 +55,18 @@ class ShiftReconciliationTest extends TestCase
     /**
      * @return array{token: string, shift_id: string}
      */
-    private function loginAndOpenShift(Store $store, User $operator): array
+    private function loginAndOpenShift(Branch $branch, User $operator): array
     {
         $login = $this->postJson($this->apiUrl('pos/login'), [
             'email' => $operator->email,
             'password' => 'secret-password',
-            'store_id' => $store->getHashedIdAttribute(),
+            'branch_id' => $branch->getHashedIdAttribute(),
         ]);
         $login->assertStatus(200);
         $token = $login->json('data.token');
 
         $openShift = $this->withHeaders(['Authorization' => 'Bearer ' . $token])
-            ->postJson($this->apiUrl('shifts'), ['store_id' => $store->getHashedIdAttribute()]);
+            ->postJson($this->apiUrl('shifts'), ['branch_id' => $branch->getHashedIdAttribute()]);
         $openShift->assertStatus(200);
 
         return [
@@ -78,6 +79,7 @@ class ShiftReconciliationTest extends TestCase
     public function closing_a_shift_records_the_counted_amount_and_a_negative_discrepancy_when_cash_is_short()
     {
         $store = Store::create(['name' => 'Reconciliation Store']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Main']);
 
         $operator = User::create([
             'name' => 'Reconciliation Operator',
@@ -85,7 +87,7 @@ class ShiftReconciliationTest extends TestCase
             'password' => 'secret-password',
         ]);
 
-        OperatorStore::create(['user_id' => $operator->id, 'store_id' => $store->id]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branch->id]);
 
         $issuer = Issuer::create([
             'name' => 'Reconciliation Issuer',
@@ -102,7 +104,7 @@ class ShiftReconciliationTest extends TestCase
         ]);
         $operator->givePermissionTo('PaymentGateway::payment_reference.create');
 
-        $opened = $this->loginAndOpenShift($store, $operator);
+        $opened = $this->loginAndOpenShift($branch, $operator);
         $token = $opened['token'];
         $shiftHashid = $opened['shift_id'];
         $headers = ['Authorization' => 'Bearer ' . $token];
@@ -149,6 +151,7 @@ class ShiftReconciliationTest extends TestCase
     public function closing_a_shift_with_an_exact_count_records_zero_discrepancy()
     {
         $store = Store::create(['name' => 'Exact Store']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Main']);
 
         $operator = User::create([
             'name' => 'Exact Operator',
@@ -156,7 +159,7 @@ class ShiftReconciliationTest extends TestCase
             'password' => 'secret-password',
         ]);
 
-        OperatorStore::create(['user_id' => $operator->id, 'store_id' => $store->id]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branch->id]);
 
         $issuer = Issuer::create([
             'name' => 'Exact Issuer',
@@ -173,7 +176,7 @@ class ShiftReconciliationTest extends TestCase
         ]);
         $operator->givePermissionTo('PaymentGateway::payment_reference.create');
 
-        $opened = $this->loginAndOpenShift($store, $operator);
+        $opened = $this->loginAndOpenShift($branch, $operator);
         $token = $opened['token'];
         $shiftHashid = $opened['shift_id'];
         $headers = ['Authorization' => 'Bearer ' . $token];
@@ -211,6 +214,7 @@ class ShiftReconciliationTest extends TestCase
     public function closing_a_shift_with_extra_cash_records_a_positive_discrepancy()
     {
         $store = Store::create(['name' => 'Over Store']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Main']);
 
         $operator = User::create([
             'name' => 'Over Operator',
@@ -218,7 +222,7 @@ class ShiftReconciliationTest extends TestCase
             'password' => 'secret-password',
         ]);
 
-        OperatorStore::create(['user_id' => $operator->id, 'store_id' => $store->id]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branch->id]);
 
         $issuer = Issuer::create([
             'name' => 'Over Issuer',
@@ -235,7 +239,7 @@ class ShiftReconciliationTest extends TestCase
         ]);
         $operator->givePermissionTo('PaymentGateway::payment_reference.create');
 
-        $opened = $this->loginAndOpenShift($store, $operator);
+        $opened = $this->loginAndOpenShift($branch, $operator);
         $token = $opened['token'];
         $shiftHashid = $opened['shift_id'];
         $headers = ['Authorization' => 'Bearer ' . $token];
