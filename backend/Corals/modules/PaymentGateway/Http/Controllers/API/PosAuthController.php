@@ -3,9 +3,9 @@
 namespace Corals\Modules\PaymentGateway\Http\Controllers\API;
 
 use Corals\Foundation\Http\Controllers\APIPublicController;
-use Corals\Modules\PaymentGateway\Models\OperatorStore;
+use Corals\Modules\PaymentGateway\Models\Branch;
+use Corals\Modules\PaymentGateway\Models\OperatorBranch;
 use Corals\Modules\PaymentGateway\Models\Pos;
-use Corals\Modules\PaymentGateway\Models\Store;
 use Corals\User\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -14,11 +14,11 @@ use Illuminate\Validation\ValidationException;
 class PosAuthController extends APIPublicController
 {
     /**
-     * Log in a POS operator and issue a Sanctum token scoped to one store.
+     * Log in a POS operator and issue a Sanctum token scoped to one branch.
      *
      * Abilities: payment:lookup, payment:collect, transaction:read-own,
-     * shift:manage, plus a synthetic `store:{hashid}` ability that scopes
-     * this token to the requested store (checked by ShiftsController@store).
+     * shift:manage, plus a synthetic `branch:{hashid}` ability that scopes
+     * this token to the requested branch (checked by ShiftsController@store).
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -28,7 +28,7 @@ class PosAuthController extends APIPublicController
         $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
-            'store_id' => ['required'],
+            'branch_id' => ['required'],
         ]);
 
         $user = User::query()->where('email', $request->get('email'))->first();
@@ -37,19 +37,19 @@ class PosAuthController extends APIPublicController
             throw ValidationException::withMessages(['email' => [trans('auth.failed')]]);
         }
 
-        $store = Store::findByHash($request->get('store_id'));
+        $branch = Branch::findByHash($request->get('branch_id'));
 
-        if (!$store) {
-            throw ValidationException::withMessages(['store_id' => [trans('Corals::messages.errors.not_found')]]);
+        if (!$branch) {
+            throw ValidationException::withMessages(['branch_id' => [trans('Corals::messages.errors.not_found')]]);
         }
 
-        $isAssigned = OperatorStore::query()
+        $isAssigned = OperatorBranch::query()
             ->where('user_id', $user->id)
-            ->where('store_id', $store->id)
+            ->where('branch_id', $branch->id)
             ->exists();
 
         if (!$isAssigned) {
-            throw ValidationException::withMessages(['store_id' => ['This operator is not assigned to the requested store.']]);
+            throw ValidationException::withMessages(['branch_id' => ['This operator is not assigned to the requested branch.']]);
         }
 
         $abilities = [
@@ -57,7 +57,7 @@ class PosAuthController extends APIPublicController
             'payment:collect',
             'transaction:read-own',
             'shift:manage',
-            'store:' . $store->getHashedIdAttribute(),
+            'branch:' . $branch->getHashedIdAttribute(),
         ];
 
         $token = $user->createToken('pos-operator', $abilities);
@@ -65,7 +65,8 @@ class PosAuthController extends APIPublicController
         return apiResponse([
             'token' => $token->plainTextToken,
             'abilities' => $abilities,
-            'store_id' => $store->getHashedIdAttribute(),
+            'branch_id' => $branch->getHashedIdAttribute(),
+            'store_id' => $branch->store?->getHashedIdAttribute(),
         ]);
     }
 

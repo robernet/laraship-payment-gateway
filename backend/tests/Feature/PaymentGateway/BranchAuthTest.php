@@ -1,0 +1,97 @@
+<?php
+
+namespace Tests\Feature\PaymentGateway;
+
+use Corals\Modules\PaymentGateway\Models\Branch;
+use Corals\Modules\PaymentGateway\Models\OperatorBranch;
+use Corals\Modules\PaymentGateway\Models\Pos;
+use Corals\Modules\PaymentGateway\Models\Store;
+use Corals\User\Models\User;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+class BranchAuthTest extends TestCase
+{
+    use LazilyRefreshDatabase;
+
+    /**
+     * KNOWN LIMITATION: copied verbatim from CollectFlowTest - see that file's
+     * docblock for why this override is needed (dynamic module-loading vs
+     * PHPUnit's app bootstrap lifecycle).
+     */
+    public function createApplication()
+    {
+        $app = require __DIR__ . '/../../../bootstrap/app.php';
+
+        try {
+            \Dotenv\Dotenv::createImmutable(__DIR__ . '/../../..')->load();
+
+            $pdo = new \PDO(
+                sprintf('mysql:host=%s;port=%s;dbname=%s', $_ENV['DB_HOST'], $_ENV['DB_PORT'], $_ENV['DB_DATABASE']),
+                $_ENV['DB_USERNAME'],
+                $_ENV['DB_PASSWORD']
+            );
+            $stmt = $pdo->prepare("
+                INSERT INTO modules (code, enabled, installed, load_order, provider, folder, type, created_at, updated_at)
+                VALUES ('corals-paymentgateway', 1, 1, 0, :provider, 'PaymentGateway', 'module', NOW(), NOW())
+                ON DUPLICATE KEY UPDATE enabled = 1, provider = VALUES(provider)
+            ");
+            $stmt->execute(['provider' => \Corals\Modules\PaymentGateway\PaymentGatewayServiceProvider::class]);
+        } catch (\PDOException $e) {
+            // modules table doesn't exist yet - skip.
+        }
+
+        $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+        return $app;
+    }
+
+    private function apiUrl(string $path): string
+    {
+        return '/api/' . config('corals.api_version') . '/' . ltrim($path, '/');
+    }
+
+    #[Test]
+    public function an_operator_assigned_to_a_branch_logs_in_and_gets_a_branch_scoped_token()
+    {
+        $store = Store::create(['name' => 'Login Co']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Branch A']);
+
+        $operator = User::create([
+            'name' => 'Assigned Op',
+            'email' => 'assigned-op@example.test',
+            'password' => 'secret-password',
+        ]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branch->id]);
+
+        $response = $this->postJson($this->apiUrl('pos/login'), [
+            'email' => 'assigned-op@example.test',
+            'password' => 'secret-password',
+            'branch_id' => $branch->getHashedIdAttribute(),
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertSame($branch->getHashedIdAttribute(), $response->json('data.branch_id'));
+        $this->assertContains('branch:' . $branch->getHashedIdAttribute(), $response->json('data.abilities'));
+    }
+
+    #[Test]
+    public function an_operator_not_assigned_to_the_branch_is_rejected()
+    {
+        $store = Store::create(['name' => 'Reject Co']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Branch B']);
+
+        User::create([
+            'name' => 'Unassigned Op',
+            'email' => 'unassigned-op@example.test',
+            'password' => 'secret-password',
+        ]);
+
+        $this->postJson($this->apiUrl('pos/login'), [
+            'email' => 'unassigned-op@example.test',
+            'password' => 'secret-password',
+            'branch_id' => $branch->getHashedIdAttribute(),
+        ])->assertStatus(422);
+    }
+}
