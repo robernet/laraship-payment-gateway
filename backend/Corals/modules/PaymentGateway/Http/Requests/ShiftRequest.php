@@ -31,7 +31,7 @@ class ShiftRequest extends BaseRequest
 
         if ($this->isStore()) {
             $rules = array_merge($rules, [
-                'store_id' => ['required'],
+                'branch_id' => ['required'],
             ]);
         }
 

@@ -21,6 +21,7 @@ class ShiftTransformer extends APIBaseTransformer
         // unchanged (see ApiHashTrait's docblock) - encode directly instead.
         $transformedArray = [
             'id' => $shift->hashed_id,
+            'branch_id' => $shift->branch?->hashed_id,
             'store_id' => $shift->store?->hashed_id,
             'operator_id' => $shift->operator_id ? Hashids::encode($shift->operator_id) : null,
             'pos_id' => $shift->pos?->hashed_id,

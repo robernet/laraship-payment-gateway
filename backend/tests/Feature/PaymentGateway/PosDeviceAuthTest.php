@@ -2,8 +2,9 @@
 
 namespace Tests\Feature\PaymentGateway;
 
+use Corals\Modules\PaymentGateway\Models\Branch;
 use Corals\Modules\PaymentGateway\Models\Issuer;
-use Corals\Modules\PaymentGateway\Models\OperatorStore;
+use Corals\Modules\PaymentGateway\Models\OperatorBranch;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
 use Corals\Modules\PaymentGateway\Models\Pos;
 use Corals\Modules\PaymentGateway\Models\Shift;
@@ -54,9 +55,14 @@ class PosDeviceAuthTest extends TestCase
         return '/api/' . config('corals.api_version') . '/' . ltrim($path, '/');
     }
 
-    private function makePos(Store $store, string $code): array
+    private function makePos(Branch $branch, string $code): array
     {
-        $pos = Pos::create(['store_id' => $store->id, 'name' => 'Terminal ' . $code, 'code' => $code]);
+        $pos = Pos::create([
+            'store_id' => $branch->store_id,
+            'branch_id' => $branch->id,
+            'name' => 'Terminal ' . $code,
+            'code' => $code,
+        ]);
         $plainSecret = $pos->regenerateDeviceSecret();
 
         return [$pos, $plainSecret];
@@ -66,7 +72,8 @@ class PosDeviceAuthTest extends TestCase
     public function a_device_can_login_open_a_shift_collect_and_close_it_without_an_operator_identity()
     {
         $store = Store::create(['name' => 'Device Store']);
-        [$pos, $plainSecret] = $this->makePos($store, 'TERM-001');
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Main']);
+        [$pos, $plainSecret] = $this->makePos($branch, 'TERM-001');
 
         $issuer = Issuer::create([
             'name' => 'Device Issuer',
@@ -93,7 +100,7 @@ class PosDeviceAuthTest extends TestCase
         $headers = ['Authorization' => 'Bearer ' . $token];
 
         $openShift = $this->withHeaders($headers)->postJson($this->apiUrl('shifts'), [
-            'store_id' => $store->getHashedIdAttribute(),
+            'branch_id' => $branch->getHashedIdAttribute(),
         ]);
         $openShift->assertStatus(200);
         $shiftHashid = $openShift->json('data.id');
@@ -119,13 +126,21 @@ class PosDeviceAuthTest extends TestCase
             'operator_id' => null,
             'pos_id' => $pos->id,
         ]);
+
+        $this->assertSame($branch->getHashedIdAttribute(), $openShift->json('data.branch_id'));
+        $this->assertDatabaseHas('paymentgateway_shifts', [
+            'id' => Shift::findByHash($shiftHashid)->id,
+            'branch_id' => $branch->id,
+            'store_id' => $store->id,
+        ]);
     }
 
     #[Test]
     public function device_login_rejects_the_wrong_secret()
     {
         $store = Store::create(['name' => 'Wrong Secret Store']);
-        $this->makePos($store, 'TERM-002');
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Main']);
+        $this->makePos($branch, 'TERM-002');
 
         $this->postJson($this->apiUrl('pos/device-login'), [
             'code' => 'TERM-002',
@@ -137,7 +152,8 @@ class PosDeviceAuthTest extends TestCase
     public function an_operator_token_cannot_close_a_shift_opened_by_a_device()
     {
         $store = Store::create(['name' => 'Mixed Identity Store']);
-        [$pos, $plainSecret] = $this->makePos($store, 'TERM-003');
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Main']);
+        [$pos, $plainSecret] = $this->makePos($branch, 'TERM-003');
 
         // isSuperUser() bypasses ownership checks for whichever user lands on
         // id 1 (default super_user_id setting) - create a throwaway user
@@ -149,7 +165,7 @@ class PosDeviceAuthTest extends TestCase
             'email' => 'mixed-operator@example.test',
             'password' => 'secret-password',
         ]);
-        OperatorStore::create(['user_id' => $operator->id, 'store_id' => $store->id]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branch->id]);
 
         $deviceLogin = $this->postJson($this->apiUrl('pos/device-login'), [
             'code' => 'TERM-003',
@@ -158,13 +174,13 @@ class PosDeviceAuthTest extends TestCase
         $deviceToken = $deviceLogin->json('data.token');
 
         $openShift = $this->withHeaders(['Authorization' => 'Bearer ' . $deviceToken])
-            ->postJson($this->apiUrl('shifts'), ['store_id' => $store->getHashedIdAttribute()]);
+            ->postJson($this->apiUrl('shifts'), ['branch_id' => $branch->getHashedIdAttribute()]);
         $shiftHashid = $openShift->json('data.id');
 
         $operatorLogin = $this->postJson($this->apiUrl('pos/login'), [
             'email' => 'mixed-operator@example.test',
             'password' => 'secret-password',
-            'store_id' => $store->getHashedIdAttribute(),
+            'branch_id' => $branch->getHashedIdAttribute(),
         ]);
         $operatorToken = $operatorLogin->json('data.token');
 
