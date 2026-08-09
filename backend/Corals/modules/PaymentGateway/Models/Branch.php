@@ -8,7 +8,7 @@ use Corals\Modules\PaymentGateway\Traits\ApiHashTrait;
 use Corals\User\Models\User;
 use Spatie\Activitylog\Traits\LogsActivity;
 
-class Store extends BaseModel
+class Branch extends BaseModel
 {
     use ApiHashTrait;
     use PresentableTrait;
@@ -18,33 +18,33 @@ class Store extends BaseModel
      *  Model configuration.
      * @var string
      */
-    public $config = 'paymentgateway.models.store';
+    public $config = 'paymentgateway.models.branch';
 
     protected $casts = [
         'properties' => 'json',
     ];
 
-    protected $table = 'paymentgateway_stores';
+    protected $table = 'paymentgateway_branches';
 
     protected $guarded = ['id'];
 
+    public function store()
+    {
+        return $this->belongsTo(Store::class, 'store_id');
+    }
+
     public function terminals()
     {
-        return $this->hasMany(Pos::class, 'store_id');
+        return $this->hasMany(Pos::class, 'branch_id');
     }
 
     /**
-     * Users allowed to log in at this store via POST /pos/login, through the
-     * paymentgateway_operator_stores pivot.
+     * Users allowed to log in at this branch via POST /pos/login, through the
+     * paymentgateway_operator_branches pivot.
      */
     public function operators()
     {
-        return $this->belongsToMany(User::class, 'paymentgateway_operator_stores', 'store_id', 'user_id')
+        return $this->belongsToMany(User::class, 'paymentgateway_operator_branches', 'branch_id', 'user_id')
             ->withTimestamps();
-    }
-
-    public function branches()
-    {
-        return $this->hasMany(Branch::class, 'store_id');
     }
 }

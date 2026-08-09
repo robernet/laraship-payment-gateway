@@ -21,7 +21,7 @@ class PaymentGatewayPermissionsDatabaseSeeder extends Seeder
             'name' => 'Administrations::admin.paymentgateway',
         ];
 
-        $models = ['store', 'pos', 'issuer', 'invoice', 'payment_reference', 'transaction', 'shift'];
+        $models = ['store', 'branch', 'pos', 'issuer', 'invoice', 'payment_reference', 'transaction', 'shift'];
 
         $levels = ['view', 'create', 'update', 'delete', 'restore', 'hardDelete'];
 
@@ -41,7 +41,19 @@ class PaymentGatewayPermissionsDatabaseSeeder extends Seeder
             ]);
         }, $permissions);
 
-        DB::table('permissions')->insert($permissions);
+        $existingNames = DB::table('permissions')
+            ->whereIn('name', array_column($permissions, 'name'))
+            ->pluck('name')
+            ->all();
+
+        $newPermissions = array_values(array_filter(
+            $permissions,
+            fn ($permission) => !in_array($permission['name'], $existingNames, true)
+        ));
+
+        if (!empty($newPermissions)) {
+            DB::table('permissions')->insert($newPermissions);
+        }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }

@@ -31,13 +31,13 @@
     @component('components.box')
         <div class="row mb-3">
             <div class="col-md-8">
-                <h4 class="d-inline">{{ trans('PaymentGateway::module.pos.title') }}</h4>
+                <h4 class="d-inline">{{ trans('PaymentGateway::module.branch.title') }}</h4>
             </div>
             <div class="col-md-4 text-right">
-                @can('create', \Corals\Modules\PaymentGateway\Models\Pos::class)
-                    <a href="{{ route('pos.create', ['store_id' => $store->hashed_id]) }}"
+                @can('create', \Corals\Modules\PaymentGateway\Models\Branch::class)
+                    <a href="{{ route('branches.create', ['store_id' => $store->hashed_id]) }}"
                        class="btn btn-sm btn-primary">
-                        {{ trans('Corals::labels.create_title', ['title' => trans('PaymentGateway::module.pos.title_singular')]) }}
+                        {{ trans('Corals::labels.create_title', ['title' => trans('PaymentGateway::module.branch.title_singular')]) }}
                     </a>
                 @endcan
             </div>
@@ -46,98 +46,21 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>{{ trans('PaymentGateway::attributes.pos.name') }}</th>
-                    <th>{{ trans('PaymentGateway::attributes.pos.code') }}</th>
+                    <th>{{ trans('PaymentGateway::attributes.branch.name') }}</th>
                     <th class="text-right">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse ($store->terminals()->orderBy('name')->get() as $terminal)
+                @forelse ($store->branches()->orderBy('name')->get() as $branch)
                     <tr>
-                        <td>{{ $terminal->name }}</td>
-                        <td>{{ $terminal->code }}</td>
+                        <td>{{ $branch->name }}</td>
                         <td class="text-right">
-                            @can('update', $terminal)
-                                <form method="POST" class="d-inline"
-                                      action="{{ route('paymentgateway.pos.regenerate_secret', $terminal->hashed_id) }}"
-                                      onsubmit="return confirm('Regenerate this device\'s secret? The old one stops working immediately.')">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-warning">Regenerate device secret</button>
-                                </form>
-                            @endcan
-                            @can('destroy', $terminal)
-                                <form method="POST" class="d-inline"
-                                      action="{{ route('pos.destroy', $terminal->hashed_id) }}"
-                                      onsubmit="return confirm('Delete this terminal?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                </form>
-                            @endcan
+                            <a href="{{ $branch->getShowURL() }}" class="btn btn-sm btn-secondary">Manage</a>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3" class="text-center text-muted">No terminals yet.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    @endcomponent
-
-    @component('components.box')
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <h4 class="d-inline">{{ trans('PaymentGateway::module.store.operators') }}</h4>
-            </div>
-        </div>
-
-        @can('update', $store)
-            <form method="POST" action="{{ route('paymentgateway.stores.operators.assign', $store->hashed_id) }}"
-                  class="form-inline mb-3">
-                @csrf
-                <select name="user_id" class="form-control mr-2" required>
-                    <option value="">--</option>
-                    @foreach ($assignableUsers as $user)
-                        <option value="{{ \Corals\Foundation\Facades\Hashids::encode($user->id) }}">
-                            {{ $user->name }} ({{ $user->email }})
-                        </option>
-                    @endforeach
-                </select>
-                <button type="submit" class="btn btn-sm btn-primary">
-                    {{ trans('PaymentGateway::module.store.add_operator') }}
-                </button>
-            </form>
-        @endcan
-
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>{{ trans('PaymentGateway::attributes.pos.name') }}</th>
-                    <th>Email</th>
-                    <th class="text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($store->operators()->orderBy('name')->get() as $operator)
-                    <tr>
-                        <td>{{ $operator->name }}</td>
-                        <td>{{ $operator->email }}</td>
-                        <td class="text-right">
-                            @can('update', $store)
-                                <form method="POST" class="d-inline"
-                                      action="{{ route('paymentgateway.stores.operators.remove', [$store->hashed_id, \Corals\Foundation\Facades\Hashids::encode($operator->id)]) }}"
-                                      onsubmit="return confirm('Remove this operator from the store?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">Remove</button>
-                                </form>
-                            @endcan
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="3" class="text-center text-muted">No operators yet.</td>
+                        <td colspan="2" class="text-center text-muted">No branches yet.</td>
                     </tr>
                 @endforelse
             </tbody>

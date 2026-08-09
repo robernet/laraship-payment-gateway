@@ -9,6 +9,14 @@ return [
         'operator_assigned' => 'Operator assigned to this store.',
         'operator_removed' => 'Operator removed from this store.',
     ],
+    'branch' => [
+        'title' => 'Branches',
+        'title_singular' => 'Branch',
+        'operators' => 'Operators',
+        'add_operator' => 'Add operator',
+        'operator_assigned' => 'Operator assigned to this branch.',
+        'operator_removed' => 'Operator removed from this branch.',
+    ],
     'issuer' => [
         'title' => 'Issuers',
         'title_singular' => 'Issuer',

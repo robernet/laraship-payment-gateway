@@ -4,8 +4,13 @@ return [
     'store' => [
         'name' => 'Name',
     ],
+    'branch' => [
+        'name' => 'Name',
+        'store_id' => 'Store',
+    ],
     'pos' => [
         'store_id' => 'Store',
+        'branch_id' => 'Branch',
         'name' => 'Name',
         'code' => 'Code',
     ],
@@ -20,8 +25,9 @@ return [
         'reference_format_preview' => 'Sample reference format',
     ],
     'invoice' => [
+        'id' => 'Invoice ID',
         'issuer_id' => 'Issuer',
-        'customer_id' => 'Customer ID',
+        'customer_id' => 'Invoice',
         'amount' => 'Amount',
         'currency' => 'Currency',
         'due_date' => 'Due date',

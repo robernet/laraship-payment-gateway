@@ -16,6 +16,22 @@ Breadcrumbs::register('paymentgateway_store_show', function ($breadcrumbs) {
     $breadcrumbs->push(view()->shared('title_singular'));
 });
 
+//Branch
+Breadcrumbs::register('paymentgateway_branches', function ($breadcrumbs) {
+    $breadcrumbs->parent('dashboard');
+    $breadcrumbs->push(trans('PaymentGateway::module.branch.title'), url(config('paymentgateway.models.branch.resource_url')));
+});
+
+Breadcrumbs::register('paymentgateway_branch_create_edit', function ($breadcrumbs) {
+    $breadcrumbs->parent('paymentgateway_branches');
+    $breadcrumbs->push(view()->shared('title_singular'));
+});
+
+Breadcrumbs::register('paymentgateway_branch_show', function ($breadcrumbs) {
+    $breadcrumbs->parent('paymentgateway_branches');
+    $breadcrumbs->push(view()->shared('title_singular'));
+});
+
 //Pos
 Breadcrumbs::register('paymentgateway_pos', function ($breadcrumbs) {
     $breadcrumbs->parent('dashboard');

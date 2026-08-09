@@ -32,7 +32,7 @@ class PosRequest extends BaseRequest
 
         if ($this->isUpdate() || $this->isStore()) {
             $rules = array_merge($rules, [
-                'store_id' => ['required'],
+                'branch_id' => ['required'],
                 'name' => ['required', 'string', 'max:255'],
             ]);
         }

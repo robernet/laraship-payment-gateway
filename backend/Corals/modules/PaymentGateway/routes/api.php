@@ -1,6 +1,7 @@
 <?php
 
 Route::post('pos/login', 'PosAuthController@login');
+Route::post('pos/device-login', 'PosAuthController@deviceLogin');
 
 Route::group(['middleware' => 'auth:sanctum'], function () {
     Route::apiResource('issuers', 'IssuersController', ['as' => 'api.paymentgateway.issuer']);

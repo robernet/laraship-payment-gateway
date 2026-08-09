@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\PaymentGateway;
 
+use Corals\Modules\PaymentGateway\Models\Branch;
 use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
-use Corals\Modules\PaymentGateway\Models\OperatorStore;
+use Corals\Modules\PaymentGateway\Models\OperatorBranch;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
+use Corals\Modules\PaymentGateway\Models\Shift;
 use Corals\Modules\PaymentGateway\Models\Store;
 use Corals\Modules\PaymentGateway\Models\Transaction;
 use Corals\User\Models\User;
@@ -71,6 +73,7 @@ class CollectFlowTest extends TestCase
     public function operator_can_login_generate_a_reference_open_a_shift_and_collect_cash()
     {
         $store = Store::create(['name' => 'Test Store']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Main']);
 
         $operator = User::create([
             'name' => 'Test Operator',
@@ -78,7 +81,7 @@ class CollectFlowTest extends TestCase
             'password' => 'secret-password',
         ]);
 
-        OperatorStore::create(['user_id' => $operator->id, 'store_id' => $store->id]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branch->id]);
 
         $issuer = Issuer::create([
             'name' => 'Test Issuer',
@@ -86,11 +89,20 @@ class CollectFlowTest extends TestCase
             'reference_layout' => ['identifier_length' => 10],
         ]);
 
-        // 1. Login - scoped token for this store.
+        // Deterministically grant permission to generate payment references,
+        // regardless of DB auto-increment order (isSuperUser() otherwise only
+        // bypasses this for whichever user happens to land on id 1).
+        \Spatie\Permission\Models\Permission::firstOrCreate([
+            'name' => 'PaymentGateway::payment_reference.create',
+            'guard_name' => config('auth.defaults.guard'),
+        ]);
+        $operator->givePermissionTo('PaymentGateway::payment_reference.create');
+
+        // 1. Login - scoped token for this branch.
         $login = $this->postJson($this->apiUrl('pos/login'), [
             'email' => 'operator@example.test',
             'password' => 'secret-password',
-            'store_id' => $store->getHashedIdAttribute(),
+            'branch_id' => $branch->getHashedIdAttribute(),
         ]);
 
         $login->assertStatus(200);
@@ -125,9 +137,9 @@ class CollectFlowTest extends TestCase
         $lookup->assertStatus(200);
         $this->assertSame($paymentReferenceId, $lookup->json('data.id'));
 
-        // 4. Open a shift for the operator's assigned store.
+        // 4. Open a shift for the operator's assigned branch.
         $openShift = $this->withHeaders($headers)->postJson($this->apiUrl('shifts'), [
-            'store_id' => $store->getHashedIdAttribute(),
+            'branch_id' => $branch->getHashedIdAttribute(),
         ]);
         $openShift->assertStatus(200);
 
@@ -152,10 +164,11 @@ class CollectFlowTest extends TestCase
     }
 
     #[Test]
-    public function operator_cannot_open_a_shift_for_a_store_they_are_not_assigned_to()
+    public function operator_cannot_open_a_shift_for_a_branch_they_are_not_assigned_to()
     {
-        $assignedStore = Store::create(['name' => 'Assigned Store']);
-        $otherStore = Store::create(['name' => 'Other Store']);
+        $store = Store::create(['name' => 'Assigned Store']);
+        $assignedBranch = Branch::create(['store_id' => $store->id, 'name' => 'Assigned Branch']);
+        $otherBranch = Branch::create(['store_id' => $store->id, 'name' => 'Other Branch']);
 
         $operator = User::create([
             'name' => 'Test Operator 2',
@@ -163,21 +176,21 @@ class CollectFlowTest extends TestCase
             'password' => 'secret-password',
         ]);
 
-        OperatorStore::create(['user_id' => $operator->id, 'store_id' => $assignedStore->id]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $assignedBranch->id]);
 
-        // Login is scoped to the assigned store...
+        // Login is scoped to the assigned branch...
         $login = $this->postJson($this->apiUrl('pos/login'), [
             'email' => 'operator2@example.test',
             'password' => 'secret-password',
-            'store_id' => $assignedStore->getHashedIdAttribute(),
+            'branch_id' => $assignedBranch->getHashedIdAttribute(),
         ]);
         $login->assertStatus(200);
         $token = $login->json('data.token');
 
-        // ...so trying to open a shift for a DIFFERENT store must be rejected,
+        // ...so trying to open a shift for a DIFFERENT branch must be rejected,
         // even though the token is otherwise valid and has shift:manage.
         $response = $this->withHeaders(['Authorization' => 'Bearer ' . $token])
-            ->postJson($this->apiUrl('shifts'), ['store_id' => $otherStore->getHashedIdAttribute()]);
+            ->postJson($this->apiUrl('shifts'), ['branch_id' => $otherBranch->getHashedIdAttribute()]);
 
         $response->assertStatus(403);
     }
@@ -186,6 +199,7 @@ class CollectFlowTest extends TestCase
     public function collecting_without_the_payment_collect_ability_is_rejected()
     {
         $store = Store::create(['name' => 'Test Store 3']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Main']);
 
         $operator = User::create([
             'name' => 'Test Operator 3',
@@ -193,7 +207,7 @@ class CollectFlowTest extends TestCase
             'password' => 'secret-password',
         ]);
 
-        OperatorStore::create(['user_id' => $operator->id, 'store_id' => $store->id]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branch->id]);
 
         $issuer = Issuer::create([
             'name' => 'Test Issuer 3',
@@ -213,7 +227,7 @@ class CollectFlowTest extends TestCase
             'payment:lookup',
             'transaction:read-own',
             'shift:manage',
-            'store:' . $store->getHashedIdAttribute(),
+            'branch:' . $branch->getHashedIdAttribute(),
         ])->plainTextToken;
 
         $response = $this->withHeaders(['Authorization' => 'Bearer ' . $token])
@@ -224,5 +238,89 @@ class CollectFlowTest extends TestCase
             ]);
 
         $response->assertStatus(403);
+    }
+
+    #[Test]
+    public function a_collect_attributes_to_the_shift_at_the_tokens_own_branch_not_just_the_latest_open_shift()
+    {
+        $store = Store::create(['name' => 'Multi-Branch Co']);
+        $branchA = Branch::create(['store_id' => $store->id, 'name' => 'Branch A']);
+        $branchB = Branch::create(['store_id' => $store->id, 'name' => 'Branch B']);
+
+        $operator = User::create([
+            'name' => 'Roaming Operator',
+            'email' => 'roaming-operator@example.test',
+            'password' => 'secret-password',
+        ]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branchA->id]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branchB->id]);
+
+        $loginA = $this->postJson($this->apiUrl('pos/login'), [
+            'email' => 'roaming-operator@example.test',
+            'password' => 'secret-password',
+            'branch_id' => $branchA->getHashedIdAttribute(),
+        ]);
+        $tokenA = $loginA->json('data.token');
+
+        $this->withHeaders(['Authorization' => 'Bearer ' . $tokenA])
+            ->postJson($this->apiUrl('shifts'), ['branch_id' => $branchA->getHashedIdAttribute()])
+            ->assertStatus(200);
+        $shiftA = Shift::where('branch_id', $branchA->id)->where('operator_id', $operator->id)->firstOrFail();
+
+        // Force a real gap before opening shift B, so opened_at (second
+        // precision) can't tie with shift A's - a tie would make
+        // latest('opened_at') non-deterministic and could pass even against
+        // the buggy (branch-unaware) lookup by accident.
+        $this->travel(2)->seconds();
+
+        $loginB = $this->postJson($this->apiUrl('pos/login'), [
+            'email' => 'roaming-operator@example.test',
+            'password' => 'secret-password',
+            'branch_id' => $branchB->getHashedIdAttribute(),
+        ]);
+        $tokenB = $loginB->json('data.token');
+
+        // Sanctum's guard memoizes the resolved user (and its attached token)
+        // for the lifetime of the test's Application instance, keyed by user
+        // identity rather than by token - so switching to a DIFFERENT token
+        // for the SAME operator still needs forgetGuards() immediately before
+        // the next authenticated call, not just once earlier in the test.
+        $this->app['auth']->forgetGuards();
+
+        $this->withHeaders(['Authorization' => 'Bearer ' . $tokenB])
+            ->postJson($this->apiUrl('shifts'), ['branch_id' => $branchB->getHashedIdAttribute()])
+            ->assertStatus(200);
+        $shiftB = Shift::where('branch_id', $branchB->id)->where('operator_id', $operator->id)->firstOrFail();
+
+        $this->assertTrue($shiftB->opened_at->gte($shiftA->opened_at));
+
+        $issuer = Issuer::create([
+            'name' => 'Multi-Branch Issuer',
+            'sub_id' => 40,
+            'reference_layout' => ['identifier_length' => 10],
+        ]);
+        $paymentReference = PaymentReference::create([
+            'issuer_id' => $issuer->id,
+            'reference' => '7770400000000001',
+            'status' => 'pending',
+            'amount_minor' => 3000,
+            'currency' => 'MXN',
+            'due_date' => now()->addDays(10)->toDateString(),
+        ]);
+
+        // Switch back to token A (scoped to Branch A) before collecting.
+        // Without the fix, whereNull('closed_at')->latest('opened_at') alone
+        // would pick shift B (opened later) purely because operator_id
+        // matches both shifts - regardless of which branch the token is for.
+        $this->app['auth']->forgetGuards();
+
+        $collect = $this->withHeaders(['Authorization' => 'Bearer ' . $tokenA])->postJson($this->apiUrl('transactions'), [
+            'payment_reference_id' => $paymentReference->getHashedIdAttribute(),
+            'amount' => 3000,
+            'currency' => 'MXN',
+        ]);
+        $collect->assertStatus(200);
+
+        $this->assertSame($shiftA->getHashedIdAttribute(), $collect->json('data.shift_id'));
     }
 }
