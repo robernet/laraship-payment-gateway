@@ -21,7 +21,7 @@ class PaymentGatewayPermissionsDatabaseSeeder extends Seeder
             'name' => 'Administrations::admin.paymentgateway',
         ];
 
-        $models = ['store', 'issuer', 'invoice', 'payment_reference', 'transaction', 'shift'];
+        $models = ['store', 'branch', 'pos', 'issuer', 'invoice', 'payment_reference', 'transaction', 'shift'];
 
         $levels = ['view', 'create', 'update', 'delete', 'restore', 'hardDelete'];
 

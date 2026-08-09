@@ -6,6 +6,7 @@ use Corals\Foundation\Http\Controllers\APIBaseController;
 use Corals\Modules\PaymentGateway\Classes\CollectionValidator;
 use Corals\Modules\PaymentGateway\Http\Requests\TransactionRequest;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
+use Corals\Modules\PaymentGateway\Models\Pos;
 use Corals\Modules\PaymentGateway\Models\Shift;
 use Corals\Modules\PaymentGateway\Models\Transaction;
 use Corals\Modules\PaymentGateway\Services\TransactionService;
@@ -30,8 +31,9 @@ class TransactionsController extends APIBaseController
 
     /**
      * Collect cash against a Reference. The shift is always the requesting
-     * operator's own currently-open shift - never client-supplied - so an
-     * operator can never record a transaction against someone else's shift.
+     * token's own currently-open shift - never client-supplied - matched by
+     * pos_id for a device-login token or operator_id for a user-login token,
+     * so a caller can never record a transaction against someone else's shift.
      *
      * @param TransactionRequest $request
      * @return \Illuminate\Http\JsonResponse
@@ -50,11 +52,13 @@ class TransactionsController extends APIBaseController
             $collectionValidator->assertAmountMatches($paymentReference, (int) $request->get('amount'));
             $collectionValidator->assertNotOverdue($paymentReference);
 
-            $shift = Shift::query()
-                ->where('operator_id', $request->user()->id)
-                ->whereNull('closed_at')
-                ->latest('opened_at')
-                ->first();
+            $user = $request->user();
+
+            $openShiftQuery = Shift::query()->whereNull('closed_at')->latest('opened_at');
+
+            $shift = $user instanceof Pos
+                ? $openShiftQuery->where('pos_id', $user->id)->first()
+                : $openShiftQuery->where('operator_id', $user->id)->first();
 
             if (!$shift) {
                 throw ValidationException::withMessages(['shift' => ['No open shift for this operator - open a shift before collecting.']]);

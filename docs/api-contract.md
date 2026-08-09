@@ -58,7 +58,8 @@ Codes: `422` validation, `401` auth, `403` forbidden, `404` not found, `500` ser
 ## PaymentGateway resources (Phase 1 + Phase 2)
 
 ### Auth (POS)
-- `POST /pos/login` — `{email, password, store_id}` → `{token, abilities, store_id}`. Issues a Sanctum token scoped to one store: abilities `payment:lookup`, `payment:collect`, `transaction:read-own`, `shift:manage`, plus a synthetic `store:{hashid}` ability checked on shift-open. `store_id` must be a store the operator is assigned to (`422` otherwise).
+- `POST /pos/login` — `{email, password, branch_id}` → `{token, abilities, branch_id, store_id}`. Issues a Sanctum token scoped to one branch: abilities `payment:lookup`, `payment:collect`, `transaction:read-own`, `shift:manage`, plus a synthetic `branch:{hashid}` ability checked on shift-open. `branch_id` must be a branch the operator is assigned to (`422` otherwise). Shifts/transactions opened with this token carry a filled `operator_id`.
+- `POST /pos/device-login` — `{code, device_secret}` → `{token, abilities, branch_id, store_id}`. For API-integrated customers whose physical POS terminal calls this API directly, with no human operator login step. `code` + `device_secret` are the terminal's own device-level credentials, issued once (and rotatable) from the admin panel — never a User's email/password. Issues a Sanctum token scoped to the terminal's own branch: same abilities as `/pos/login` plus a synthetic `pos:{hashid}` ability instead of a human identity. Shifts/transactions opened with this token carry a filled `pos_id` and leave `operator_id` null — since the terminal itself, not whichever person is standing at it, is the fixed identity worth tracking. `422` on an unknown `code` or wrong `device_secret` (same convention as `/pos/login`); also `422` when the terminal has no branch assigned (message key `code`: "This terminal is not assigned to a branch.").
 
 ### Issuer
 - `GET/POST /issuers` · `GET/PATCH/DELETE /issuers/{hashid}`
@@ -122,13 +123,18 @@ Codes: `422` validation, `401` auth, `403` forbidden, `404` not found, `500` ser
   - `status` (string)
 
 ### Shift
-- `POST /shifts` (open) — `{store_id}`. Requires the operator's token to carry a `store:{hashid}` ability matching this store (`403` otherwise).
-- `PATCH /shifts/{hashid}` (close) — only the operator who opened it may close it. Body: `{counted_amount}` (int, minor units, required) — the cash the operator counted; the server computes and stores `discrepancy_minor` against the shift's actual collected total.
+- `POST /shifts` (open) — `{branch_id}`. Requires the caller's token to carry a `branch:{hashid}` ability matching this branch (`403` otherwise). A device-login token (POS terminal) records `pos_id` and leaves `operator_id` null; an operator-login token (User) does the opposite — see Auth (POS).
+- `PATCH /shifts/{hashid}` (close) — only the identity (operator or device) that opened it may close it. Body: `{counted_amount}` (int, minor units, required) — the cash counted at close; the server computes and stores `discrepancy_minor` against the shift's actual collected total.
 - Fields:
   - `id` (hashid, string)
-  - `store_id` (hashid, string)
-  - `operator_id` (hashid, string)
+  - `branch_id` (hashid, string)
+  - `store_id` (hashid, string) — the branch's owning store (denormalized)
+  - `operator_id` (hashid, string, nullable) — set when opened via `/pos/login`; null when opened via `/pos/device-login`
+  - `pos_id` (hashid, string, nullable) — set when opened via `/pos/device-login`; null when opened via `/pos/login`
   - `opened_at` (datetime)
   - `closed_at` (datetime, nullable)
-  - `counted_amount_minor` (int, minor units, nullable) — cash counted by the operator at close time, set on `PATCH /shifts/{hashid}`
+  - `counted_amount_minor` (int, minor units, nullable) — cash counted at close time, set on `PATCH /shifts/{hashid}`
   - `discrepancy_minor` (int, minor units, nullable) — `counted_amount_minor` minus the sum of the shift's collected transactions; positive = over, negative = short, `0` = exact. Computed server-side, never client-supplied. Assumes all of a shift's transactions share a single currency — nothing currently enforces this, so a mixed-currency shift would sum meaninglessly (pre-existing Phase 2 gap, not fixed here).
+
+### Branch
+The operational unit a POS terminal and its operators belong to; a Store has many Branches. Admin-managed only — there is **no** `GET /branches` yet (a listing endpoint is deferred to the Flutter client work). `branch_id` (hashid) is supplied to `/pos/login` and `POST /shifts` as a raw parameter, exactly as `store_id` was.

@@ -4,8 +4,9 @@ namespace Corals\Modules\PaymentGateway\Http\Controllers\API;
 
 use Corals\Foundation\Http\Controllers\APIBaseController;
 use Corals\Modules\PaymentGateway\Http\Requests\ShiftRequest;
+use Corals\Modules\PaymentGateway\Models\Branch;
+use Corals\Modules\PaymentGateway\Models\Pos;
 use Corals\Modules\PaymentGateway\Models\Shift;
-use Corals\Modules\PaymentGateway\Models\Store;
 use Corals\Modules\PaymentGateway\Services\ShiftService;
 use Corals\Modules\PaymentGateway\Transformers\API\ShiftPresenter;
 use Illuminate\Validation\ValidationException;
@@ -27,8 +28,10 @@ class ShiftsController extends APIBaseController
     }
 
     /**
-     * Open a shift. The requesting operator's token must be scoped to the
-     * target store (a synthetic `store:{hashid}` ability set at login).
+     * Open a shift. The requesting token must be scoped to the target branch
+     * (a synthetic `branch:{hashid}` ability set at login). A device-login
+     * token (Pos) records pos_id and leaves operator_id null; an
+     * operator-login token (User) does the opposite.
      *
      * @param ShiftRequest $request
      * @return \Illuminate\Http\JsonResponse
@@ -38,25 +41,32 @@ class ShiftsController extends APIBaseController
         try {
             $this->authorize('create', Shift::class);
 
-            $store = Store::findByHash($request->get('store_id'));
+            $branch = Branch::findByHash($request->get('branch_id'));
 
-            if (!$store) {
-                throw ValidationException::withMessages(['store_id' => [trans('Corals::messages.errors.not_found')]]);
+            if (!$branch) {
+                throw ValidationException::withMessages(['branch_id' => [trans('Corals::messages.errors.not_found')]]);
             }
 
             $token = $request->user()->currentAccessToken();
 
             abort_if(
-                !$token || !$token->can('store:' . $store->getHashedIdAttribute()),
+                !$token || !$token->can('branch:' . $branch->getHashedIdAttribute()),
                 403,
-                'This token is not scoped to the requested store.'
+                'This token is not scoped to the requested branch.'
             );
 
-            $shift = $this->shiftService->store($request, Shift::class, [
-                'store_id' => $store->id,
-                'operator_id' => $request->user()->id,
+            $identity = $request->user() instanceof Pos
+                ? ['pos_id' => $request->user()->id]
+                : ['operator_id' => $request->user()->id];
+
+            $shift = $this->shiftService->store($request, Shift::class, array_merge([
+                'branch_id' => $branch->id,
+                // ponytail: store_id denormalized from branch.store_id to avoid a
+                // column-modify migration + report refactor; drop it and join
+                // through branch when it becomes a maintenance burden.
+                'store_id' => $branch->store_id,
                 'opened_at' => now(),
-            ]);
+            ], $identity));
 
             return apiResponse($this->shiftService->getModelDetails(), trans('Corals::messages.success.created', ['item' => 'shift']));
         } catch (\Exception $exception) {
@@ -81,7 +91,13 @@ class ShiftsController extends APIBaseController
     public function update(ShiftRequest $request, Shift $shift)
     {
         try {
-            abort_if($shift->operator_id !== $request->user()->id, 403, 'This shift belongs to a different operator.');
+            $user = $request->user();
+
+            $isOwner = $user instanceof Pos
+                ? $shift->pos_id === $user->id
+                : $shift->operator_id === $user->id;
+
+            abort_if(!$isOwner, 403, 'This shift belongs to a different operator.');
             $this->authorize('update', $shift);
             abort_if(!$shift->isOpen(), 422, 'This shift is already closed.');
 
