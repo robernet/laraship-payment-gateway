@@ -94,4 +94,29 @@ class BranchAuthTest extends TestCase
             'branch_id' => $branch->getHashedIdAttribute(),
         ])->assertStatus(422);
     }
+
+    #[Test]
+    public function device_login_issues_a_branch_scoped_token()
+    {
+        $store = Store::create(['name' => 'Device Co']);
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Device Branch']);
+
+        $pos = Pos::create([
+            'store_id' => $store->id,
+            'branch_id' => $branch->id,
+            'name' => 'Device Till',
+            'code' => 'DEV-TILL-1',
+        ]);
+        $plainSecret = $pos->regenerateDeviceSecret();
+
+        $response = $this->postJson($this->apiUrl('pos/device-login'), [
+            'code' => 'DEV-TILL-1',
+            'device_secret' => $plainSecret,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertSame($branch->getHashedIdAttribute(), $response->json('data.branch_id'));
+        $this->assertContains('branch:' . $branch->getHashedIdAttribute(), $response->json('data.abilities'));
+        $this->assertContains('pos:' . $pos->getHashedIdAttribute(), $response->json('data.abilities'));
+    }
 }

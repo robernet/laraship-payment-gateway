@@ -78,8 +78,9 @@ class PosAuthController extends APIPublicController
      * operator_id null (see docs/api-contract.md Auth (POS) / Shift).
      *
      * Abilities: same set as an operator token, minus shift:manage is kept
-     * (a device still opens/closes its own shifts), plus `pos:{hashid}`
-     * instead of a human identity.
+     * (a device still opens/closes its own shifts), plus `branch:{hashid}`
+     * (from the terminal's own branch) and `pos:{hashid}` instead of a human
+     * identity.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -97,14 +98,18 @@ class PosAuthController extends APIPublicController
             throw ValidationException::withMessages(['code' => [trans('auth.failed')]]);
         }
 
-        $store = $pos->store;
+        $branch = $pos->branch;
+
+        if (!$branch) {
+            throw ValidationException::withMessages(['code' => ['This terminal is not assigned to a branch.']]);
+        }
 
         $abilities = [
             'payment:lookup',
             'payment:collect',
             'transaction:read-own',
             'shift:manage',
-            'store:' . $store->getHashedIdAttribute(),
+            'branch:' . $branch->getHashedIdAttribute(),
             'pos:' . $pos->getHashedIdAttribute(),
         ];
 
@@ -113,7 +118,8 @@ class PosAuthController extends APIPublicController
         return apiResponse([
             'token' => $token->plainTextToken,
             'abilities' => $abilities,
-            'store_id' => $store->getHashedIdAttribute(),
+            'branch_id' => $branch->getHashedIdAttribute(),
+            'store_id' => $branch->store?->getHashedIdAttribute(),
         ]);
     }
 }
