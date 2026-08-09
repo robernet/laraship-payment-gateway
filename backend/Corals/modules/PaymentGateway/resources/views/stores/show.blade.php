@@ -13,6 +13,13 @@
 @endsection
 
 @section('content')
+    @if (session('device_secret'))
+        <div class="alert alert-warning">
+            <strong>Device secret:</strong> <code>{{ session('device_secret') }}</code>
+            <br>Copy this now - it will not be shown again.
+        </div>
+    @endif
+
     @component('components.box')
         <div class="row">
             <div class="col-md-12">
