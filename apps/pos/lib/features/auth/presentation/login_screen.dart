@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../widgets/pos_app_bar.dart';
 import '../domain/auth_state.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -47,7 +48,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Operator Login')),
+      appBar: const PosAppBar(title: 'Operator Login'),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -71,7 +72,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             const SizedBox(height: 16),
             if (_error != null) Text(_error!),
-            ElevatedButton(
+            FilledButton(
               key: const Key('login_submit'),
               onPressed: _loading ? null : _submit,
               child: _loading ? const CircularProgressIndicator() : const Text('Log in'),

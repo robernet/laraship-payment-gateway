@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../widgets/pos_app_bar.dart';
 import '../domain/reference_lookup_state.dart';
 
 class ReferenceLookupScreen extends ConsumerStatefulWidget {
@@ -41,8 +42,8 @@ class _ReferenceLookupScreenState extends ConsumerState<ReferenceLookupScreen> {
     final result = ref.watch(referenceLookupProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Look up reference'),
+      appBar: PosAppBar(
+        title: 'Look up reference',
         leading: IconButton(
           key: const Key('back_to_main_button'),
           icon: const Icon(Icons.home),
@@ -61,7 +62,7 @@ class _ReferenceLookupScreenState extends ConsumerState<ReferenceLookupScreen> {
             ),
             Row(
               children: [
-                ElevatedButton(
+                FilledButton(
                   key: const Key('reference_submit'),
                   onPressed: () => ref.read(referenceLookupProvider.notifier).lookup(_reference.text),
                   child: const Text('Look up'),
@@ -99,20 +100,31 @@ class _ReferenceLookupScreenState extends ConsumerState<ReferenceLookupScreen> {
         return Column(
           key: const Key('reference_amount_due'),
           children: [
-            Text('Amount due: ${reference.amount} ${reference.currency}'),
-            Text('Due date: ${reference.dueDate.toIso8601String()}'),
-            if (!isPending)
-              Text(
-                'This reference cannot be collected (status: ${reference.status}).',
-                key: const Key('reference_status_message'),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Amount due: ${reference.amount} ${reference.currency}'),
+                    Text('Due date: ${reference.dueDate.toIso8601String()}'),
+                    if (!isPending)
+                      Text(
+                        'This reference cannot be collected (status: ${reference.status}).',
+                        key: const Key('reference_status_message'),
+                      ),
+                  ],
+                ),
               ),
-            ElevatedButton(
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
               key: const Key('reference_collect'),
               onPressed: isPending ? () => widget.onCollect(reference) : null,
               child: const Text('Collect'),
             ),
             if (!isPending)
-              ElevatedButton(
+              OutlinedButton(
                 key: const Key('reference_reset_button'),
                 onPressed: () {
                   ref.read(referenceLookupProvider.notifier).reset();

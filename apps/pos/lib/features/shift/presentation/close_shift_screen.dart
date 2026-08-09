@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../widgets/pos_app_bar.dart';
 import '../domain/shift_state.dart';
 
 class CloseShiftScreen extends ConsumerStatefulWidget {
@@ -50,7 +51,7 @@ class _CloseShiftScreenState extends ConsumerState<CloseShiftScreen> {
   Widget build(BuildContext context) {
     final closed = _closed;
     return Scaffold(
-      appBar: AppBar(title: const Text('Close shift')),
+      appBar: const PosAppBar(title: 'Close shift'),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: closed == null ? _buildForm() : _buildResult(closed),
@@ -68,7 +69,7 @@ class _CloseShiftScreenState extends ConsumerState<CloseShiftScreen> {
           decoration: const InputDecoration(labelText: 'Counted cash'),
         ),
         if (_error != null) Text(_error!),
-        ElevatedButton(
+        FilledButton(
           key: const Key('close_shift_submit'),
           onPressed: _loading ? null : _submit,
           child: _loading ? const CircularProgressIndicator() : const Text('Close shift'),
@@ -81,8 +82,14 @@ class _CloseShiftScreenState extends ConsumerState<CloseShiftScreen> {
     return Column(
       key: const Key('close_shift_result'),
       children: [
-        Text('Discrepancy: ${closed.discrepancyMinor ?? 0}'),
-        ElevatedButton(
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('Discrepancy: ${closed.discrepancyMinor ?? 0}'),
+          ),
+        ),
+        const SizedBox(height: 16),
+        FilledButton(
           key: const Key('close_shift_done'),
           onPressed: widget.onDone,
           child: const Text('Start new shift'),

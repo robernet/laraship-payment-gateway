@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../widgets/pos_app_bar.dart';
 import '../../auth/domain/auth_state.dart';
 import '../domain/shift_state.dart';
 
@@ -35,13 +36,13 @@ class _OpenShiftScreenState extends ConsumerState<OpenShiftScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Open shift')),
+      appBar: const PosAppBar(title: 'Open shift'),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (_error != null) Text(_error!),
-            ElevatedButton(
+            FilledButton(
               key: const Key('open_shift_submit'),
               onPressed: _loading ? null : _open,
               child: _loading ? const CircularProgressIndicator() : const Text('Open shift'),

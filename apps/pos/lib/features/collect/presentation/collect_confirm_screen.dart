@@ -2,6 +2,7 @@ import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../widgets/pos_app_bar.dart';
 import '../domain/collect_state.dart';
 
 class CollectConfirmScreen extends ConsumerWidget {
@@ -27,8 +28,8 @@ class CollectConfirmScreen extends ConsumerWidget {
     final error = collect != null && collect.hasError ? collect.error : null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Collect payment'),
+      appBar: PosAppBar(
+        title: 'Collect payment',
         leading: IconButton(
           key: const Key('back_to_main_button'),
           icon: const Icon(Icons.home),
@@ -40,13 +41,19 @@ class CollectConfirmScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text('Amount due: ${reference.amount} ${reference.currency}'),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('Amount due: ${reference.amount} ${reference.currency}'),
+              ),
+            ),
+            const SizedBox(height: 16),
             if (error != null)
               Text(
                 error is ApiException ? (_firstErrorOrMessage(error)) : 'Something went wrong.',
                 key: const Key('collect_error'),
               ),
-            ElevatedButton(
+            FilledButton(
               key: const Key('collect_confirm'),
               onPressed: collect != null && collect.isLoading
                   ? null

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../widgets/pos_app_bar.dart';
+
 class MainScreen extends StatelessWidget {
   const MainScreen({
     super.key,
@@ -17,8 +19,8 @@ class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('POS'),
+      appBar: PosAppBar(
+        title: 'POS',
         actions: [
           IconButton(
             key: const Key('main_end_shift'),
@@ -38,13 +40,13 @@ class MainScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ElevatedButton(
+            FilledButton(
               key: const Key('main_lookup_reference'),
               onPressed: onLookupReference,
               child: const Text('Look up reference'),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            FilledButton(
               key: const Key('main_shift_transactions'),
               onPressed: onShiftTransactions,
               child: const Text('Shift transactions'),

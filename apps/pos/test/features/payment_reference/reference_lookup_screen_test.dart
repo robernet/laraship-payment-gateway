@@ -93,7 +93,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('This reference cannot be collected (status: collected).'), findsOneWidget);
-    final collectButton = tester.widget<ElevatedButton>(find.byKey(const Key('reference_collect')));
+    final collectButton = tester.widget<FilledButton>(find.byKey(const Key('reference_collect')));
     expect(collectButton.onPressed, isNull);
 
     await tester.tap(find.byKey(const Key('reference_reset_button')));
