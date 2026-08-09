@@ -7,6 +7,7 @@ use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\OperatorBranch;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
+use Corals\Modules\PaymentGateway\Models\Shift;
 use Corals\Modules\PaymentGateway\Models\Store;
 use Corals\Modules\PaymentGateway\Models\Transaction;
 use Corals\User\Models\User;
@@ -237,5 +238,89 @@ class CollectFlowTest extends TestCase
             ]);
 
         $response->assertStatus(403);
+    }
+
+    #[Test]
+    public function a_collect_attributes_to_the_shift_at_the_tokens_own_branch_not_just_the_latest_open_shift()
+    {
+        $store = Store::create(['name' => 'Multi-Branch Co']);
+        $branchA = Branch::create(['store_id' => $store->id, 'name' => 'Branch A']);
+        $branchB = Branch::create(['store_id' => $store->id, 'name' => 'Branch B']);
+
+        $operator = User::create([
+            'name' => 'Roaming Operator',
+            'email' => 'roaming-operator@example.test',
+            'password' => 'secret-password',
+        ]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branchA->id]);
+        OperatorBranch::create(['user_id' => $operator->id, 'branch_id' => $branchB->id]);
+
+        $loginA = $this->postJson($this->apiUrl('pos/login'), [
+            'email' => 'roaming-operator@example.test',
+            'password' => 'secret-password',
+            'branch_id' => $branchA->getHashedIdAttribute(),
+        ]);
+        $tokenA = $loginA->json('data.token');
+
+        $this->withHeaders(['Authorization' => 'Bearer ' . $tokenA])
+            ->postJson($this->apiUrl('shifts'), ['branch_id' => $branchA->getHashedIdAttribute()])
+            ->assertStatus(200);
+        $shiftA = Shift::where('branch_id', $branchA->id)->where('operator_id', $operator->id)->firstOrFail();
+
+        // Force a real gap before opening shift B, so opened_at (second
+        // precision) can't tie with shift A's - a tie would make
+        // latest('opened_at') non-deterministic and could pass even against
+        // the buggy (branch-unaware) lookup by accident.
+        $this->travel(2)->seconds();
+
+        $loginB = $this->postJson($this->apiUrl('pos/login'), [
+            'email' => 'roaming-operator@example.test',
+            'password' => 'secret-password',
+            'branch_id' => $branchB->getHashedIdAttribute(),
+        ]);
+        $tokenB = $loginB->json('data.token');
+
+        // Sanctum's guard memoizes the resolved user (and its attached token)
+        // for the lifetime of the test's Application instance, keyed by user
+        // identity rather than by token - so switching to a DIFFERENT token
+        // for the SAME operator still needs forgetGuards() immediately before
+        // the next authenticated call, not just once earlier in the test.
+        $this->app['auth']->forgetGuards();
+
+        $this->withHeaders(['Authorization' => 'Bearer ' . $tokenB])
+            ->postJson($this->apiUrl('shifts'), ['branch_id' => $branchB->getHashedIdAttribute()])
+            ->assertStatus(200);
+        $shiftB = Shift::where('branch_id', $branchB->id)->where('operator_id', $operator->id)->firstOrFail();
+
+        $this->assertTrue($shiftB->opened_at->gte($shiftA->opened_at));
+
+        $issuer = Issuer::create([
+            'name' => 'Multi-Branch Issuer',
+            'sub_id' => 40,
+            'reference_layout' => ['identifier_length' => 10],
+        ]);
+        $paymentReference = PaymentReference::create([
+            'issuer_id' => $issuer->id,
+            'reference' => '7770400000000001',
+            'status' => 'pending',
+            'amount_minor' => 3000,
+            'currency' => 'MXN',
+            'due_date' => now()->addDays(10)->toDateString(),
+        ]);
+
+        // Switch back to token A (scoped to Branch A) before collecting.
+        // Without the fix, whereNull('closed_at')->latest('opened_at') alone
+        // would pick shift B (opened later) purely because operator_id
+        // matches both shifts - regardless of which branch the token is for.
+        $this->app['auth']->forgetGuards();
+
+        $collect = $this->withHeaders(['Authorization' => 'Bearer ' . $tokenA])->postJson($this->apiUrl('transactions'), [
+            'payment_reference_id' => $paymentReference->getHashedIdAttribute(),
+            'amount' => 3000,
+            'currency' => 'MXN',
+        ]);
+        $collect->assertStatus(200);
+
+        $this->assertSame($shiftA->getHashedIdAttribute(), $collect->json('data.shift_id'));
     }
 }
