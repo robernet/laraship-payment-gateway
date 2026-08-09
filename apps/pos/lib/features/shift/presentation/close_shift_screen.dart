@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../widgets/pos_app_bar.dart';
+import '../../../widgets/pos_button_spinner.dart';
 import '../domain/shift_state.dart';
 
 class CloseShiftScreen extends ConsumerStatefulWidget {
@@ -72,7 +73,7 @@ class _CloseShiftScreenState extends ConsumerState<CloseShiftScreen> {
         FilledButton(
           key: const Key('close_shift_submit'),
           onPressed: _loading ? null : _submit,
-          child: _loading ? const CircularProgressIndicator() : const Text('Close shift'),
+          child: _loading ? const PosButtonSpinner() : const Text('Close shift'),
         ),
       ],
     );

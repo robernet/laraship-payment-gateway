@@ -77,7 +77,15 @@ class _ReferenceLookupScreenState extends ConsumerState<ReferenceLookupScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            if (result != null) _buildResult(result),
+            if (result != null)
+              _buildResult(result)
+            else
+              const Text(
+                'Enter or scan a payment reference to look it up.',
+                key: Key('reference_lookup_empty_state'),
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
           ],
         ),
       ),
@@ -86,7 +94,10 @@ class _ReferenceLookupScreenState extends ConsumerState<ReferenceLookupScreen> {
 
   Widget _buildResult(AsyncValue<PaymentReference> result) {
     return result.when(
-      loading: () => const CircularProgressIndicator(),
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: CircularProgressIndicator(),
+      ),
       error: (error, _) {
         final message = error is ApiException && error.isNotFound
             ? 'Reference not found.'
