@@ -58,6 +58,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             context.go('/reference-lookup');
           },
           onShiftTransactions: () => context.go('/shift/transactions'),
+          onEndShift: () => context.go('/shift/close'),
+          onLogout: () => ref.read(authProvider.notifier).logout(),
         ),
       ),
       GoRoute(
