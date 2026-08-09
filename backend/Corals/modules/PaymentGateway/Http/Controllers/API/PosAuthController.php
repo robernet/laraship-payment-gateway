@@ -4,6 +4,7 @@ namespace Corals\Modules\PaymentGateway\Http\Controllers\API;
 
 use Corals\Foundation\Http\Controllers\APIPublicController;
 use Corals\Modules\PaymentGateway\Models\OperatorStore;
+use Corals\Modules\PaymentGateway\Models\Pos;
 use Corals\Modules\PaymentGateway\Models\Store;
 use Corals\User\Models\User;
 use Illuminate\Http\Request;
@@ -60,6 +61,53 @@ class PosAuthController extends APIPublicController
         ];
 
         $token = $user->createToken('pos-operator', $abilities);
+
+        return apiResponse([
+            'token' => $token->plainTextToken,
+            'abilities' => $abilities,
+            'store_id' => $store->getHashedIdAttribute(),
+        ]);
+    }
+
+    /**
+     * Log in a POS terminal itself (device-level credentials) and issue a
+     * Sanctum token scoped to the device's own store. Used by API-integrated
+     * customers whose terminal calls this API directly, with no operator
+     * login step - resulting shifts/transactions carry pos_id and leave
+     * operator_id null (see docs/api-contract.md Auth (POS) / Shift).
+     *
+     * Abilities: same set as an operator token, minus shift:manage is kept
+     * (a device still opens/closes its own shifts), plus `pos:{hashid}`
+     * instead of a human identity.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deviceLogin(Request $request)
+    {
+        $request->validate([
+            'code' => ['required', 'string'],
+            'device_secret' => ['required', 'string'],
+        ]);
+
+        $pos = Pos::query()->where('code', $request->get('code'))->first();
+
+        if (!$pos || !$pos->device_secret || !Hash::check($request->get('device_secret'), $pos->device_secret)) {
+            throw ValidationException::withMessages(['code' => [trans('auth.failed')]]);
+        }
+
+        $store = $pos->store;
+
+        $abilities = [
+            'payment:lookup',
+            'payment:collect',
+            'transaction:read-own',
+            'shift:manage',
+            'store:' . $store->getHashedIdAttribute(),
+            'pos:' . $pos->getHashedIdAttribute(),
+        ];
+
+        $token = $pos->createToken('pos-device', $abilities);
 
         return apiResponse([
             'token' => $token->plainTextToken,

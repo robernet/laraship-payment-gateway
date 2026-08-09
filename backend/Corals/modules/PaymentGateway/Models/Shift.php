@@ -42,6 +42,11 @@ class Shift extends BaseModel
         return $this->belongsTo(User::class, 'operator_id');
     }
 
+    public function pos()
+    {
+        return $this->belongsTo(Pos::class, 'pos_id');
+    }
+
     public function transactions()
     {
         return $this->hasMany(Transaction::class, 'shift_id');
