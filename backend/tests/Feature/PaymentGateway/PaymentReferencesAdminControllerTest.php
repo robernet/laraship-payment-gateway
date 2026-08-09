@@ -299,4 +299,106 @@ class PaymentReferencesAdminControllerTest extends TestCase
         $this->assertContains($ownReference->reference, $references);
         $this->assertNotContains($otherReference->reference, $references);
     }
+
+    #[Test]
+    public function admin_can_generate_a_reference_from_a_newly_created_invoice_in_one_submit()
+    {
+        $admin = $this->admin('inline-invoice');
+        $issuer = $this->issuer('inline-invoice');
+
+        $response = $this->actingAs($admin)->post('/payment-references', [
+            'invoice_mode' => 'new',
+            'issuer_id' => $issuer->getHashedIdAttribute(),
+            'customer_id' => 'cust-inline',
+            'amount_input' => '150.00',
+            'currency' => 'MXN',
+            'due_date' => now()->addDays(5)->toDateString(),
+            'description' => 'Inline invoice test',
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('paymentgateway_invoices', [
+            'issuer_id' => $issuer->id,
+            'customer_id' => 'cust-inline',
+            'amount_minor' => 15000,
+            'currency' => 'MXN',
+        ]);
+
+        $invoice = Invoice::where('customer_id', 'cust-inline')->firstOrFail();
+
+        $this->assertDatabaseHas('paymentgateway_payment_references', [
+            'issuer_id' => $issuer->id,
+            'invoice_id' => $invoice->id,
+            'amount_minor' => 15000,
+            'currency' => 'MXN',
+            'status' => 'pending',
+        ]);
+    }
+
+    #[Test]
+    public function admin_form_can_configure_autopay_on_generation()
+    {
+        $admin = $this->admin('autopay');
+        $issuer = $this->issuer('autopay');
+        $invoice = $this->unpaidInvoice($issuer, 'autopay');
+
+        $response = $this->actingAs($admin)->post('/payment-references', [
+            'invoice_mode' => 'existing',
+            'invoice_id' => $invoice->getHashedIdAttribute(),
+            'autopay_enabled' => '1',
+            'autopay_payment_number' => 6,
+            'autopay_frequency_days' => 30,
+        ]);
+
+        $response->assertRedirect();
+
+        $paymentReference = PaymentReference::where('invoice_id', $invoice->id)->firstOrFail();
+
+        $this->assertDatabaseHas('paymentgateway_payment_references', [
+            'id' => $paymentReference->id,
+            'autopay_enabled' => 1,
+            'autopay_payment_number' => 6,
+            'autopay_frequency_days' => 30,
+        ]);
+
+        $this->assertDatabaseHas('paymentgateway_autopay_schedules', [
+            'payment_reference_id' => $paymentReference->id,
+            'status' => 'scheduled',
+        ]);
+    }
+
+    #[Test]
+    public function enabling_autopay_without_payment_number_or_frequency_fails_validation()
+    {
+        $admin = $this->admin('autopay-invalid');
+        $issuer = $this->issuer('autopay-invalid');
+        $invoice = $this->unpaidInvoice($issuer, 'autopay-invalid');
+
+        $response = $this->actingAs($admin)->post('/payment-references', [
+            'invoice_mode' => 'existing',
+            'invoice_id' => $invoice->getHashedIdAttribute(),
+            'autopay_enabled' => '1',
+        ]);
+
+        $response->assertSessionHasErrors(['autopay_payment_number', 'autopay_frequency_days']);
+
+        $this->assertDatabaseMissing('paymentgateway_payment_references', [
+            'invoice_id' => $invoice->id,
+        ]);
+    }
+
+    #[Test]
+    public function create_page_renders_the_new_invoice_toggle_and_autopay_fields()
+    {
+        $admin = $this->admin('render-toggle');
+        $this->issuer('render-toggle');
+
+        $this->actingAs($admin)->get('/payment-references/create')
+            ->assertStatus(200)
+            ->assertSee('name="invoice_mode"', false)
+            ->assertSee('name="autopay_enabled"', false)
+            ->assertSee('name="autopay_payment_number"', false)
+            ->assertSee('name="autopay_frequency_days"', false);
+    }
 }

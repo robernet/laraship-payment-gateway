@@ -11,15 +11,18 @@ use Corals\Modules\PaymentGateway\Http\Requests\PaymentReferenceRequest;
 use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
+use Corals\Modules\PaymentGateway\Services\InvoiceService;
 use Corals\Modules\PaymentGateway\Services\PaymentReferenceService;
 
 class PaymentReferencesController extends BaseController
 {
     protected $paymentReferenceService;
+    protected $invoiceService;
 
-    public function __construct(PaymentReferenceService $paymentReferenceService)
+    public function __construct(PaymentReferenceService $paymentReferenceService, InvoiceService $invoiceService)
     {
         $this->paymentReferenceService = $paymentReferenceService;
+        $this->invoiceService = $invoiceService;
 
         $this->resource_url = config('paymentgateway.models.payment_reference.resource_url');
 
@@ -64,11 +67,14 @@ class PaymentReferencesController extends BaseController
 
         $groupByIssuer = Issuer::isAdminUser($user) || $accessibleIssuerIds->count() > 1;
 
+        $issuers = Issuer::accessibleBy($user)->orderBy('name')->get();
+        $isAdmin = Issuer::isAdminUser($user);
+
         $this->setViewSharedData([
             'title_singular' => trans('Corals::labels.create_title', ['title' => $this->title_singular]),
         ]);
 
-        return view('PaymentGateway::payment_references.create')->with(compact('invoices', 'groupByIssuer'));
+        return view('PaymentGateway::payment_references.create')->with(compact('invoices', 'groupByIssuer', 'issuers', 'isAdmin'));
     }
 
     /**
@@ -85,13 +91,25 @@ class PaymentReferencesController extends BaseController
         PayFormatGeneratorService $payFormatGenerator
     ) {
         try {
-            $invoice = Invoice::findByHash($request->get('invoice_id'));
+            if ($request->input('invoice_mode', 'existing') === 'new') {
+                $issuer = Issuer::findByHash($request->get('issuer_id'));
 
-            abort_if(!$invoice, 404);
+                abort_if(!$issuer, 404);
+            } else {
+                $invoice = Invoice::findByHash($request->get('invoice_id'));
 
-            $issuer = $invoice->issuer;
+                abort_if(!$invoice, 404);
+
+                $issuer = $invoice->issuer;
+            }
 
             abort_if(!$issuer->isAccessibleBy($request->user()), 403, 'This user is not linked to the requested issuer.');
+
+            if ($request->input('invoice_mode', 'existing') === 'new') {
+                $invoiceData = $request->only(['customer_id', 'amount_minor', 'currency', 'due_date', 'description']);
+
+                $invoice = $this->invoiceService->store($invoiceData, Invoice::class, ['issuer_id' => $issuer->id]);
+            }
 
             abort_if($invoice->paymentReference()->exists(), 422, 'This invoice already has a Payment Reference.');
 
@@ -99,7 +117,10 @@ class PaymentReferencesController extends BaseController
                 $invoice,
                 $generator,
                 $barcodeGenerator,
-                $payFormatGenerator
+                $payFormatGenerator,
+                $request->boolean('autopay_enabled'),
+                $request->filled('autopay_payment_number') ? (int) $request->input('autopay_payment_number') : null,
+                $request->filled('autopay_frequency_days') ? (int) $request->input('autopay_frequency_days') : null
             );
 
             flash(trans('Corals::messages.success.created', ['item' => $this->title_singular]))->success();

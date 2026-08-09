@@ -31,6 +31,7 @@ return [
     'payment_reference' => [
         'issuer_id' => 'Issuer',
         'invoice_id' => 'Invoice',
+        'invoice_mode' => 'Invoice source',
         'generating_for' => 'Generating for',
         'amount' => 'Amount (minor units)',
         'currency' => 'Currency',
@@ -40,6 +41,9 @@ return [
         'status' => 'Status',
         'integration_mode' => 'Integration mode',
         'pay_format_url' => 'Payment slip (PDF)',
+        'autopay_enabled' => 'Enable AutoPay',
+        'autopay_payment_number' => 'AutoPay charges',
+        'autopay_frequency_days' => 'AutoPay frequency (days)',
     ],
     'transaction' => [
         'reference' => 'Reference',
