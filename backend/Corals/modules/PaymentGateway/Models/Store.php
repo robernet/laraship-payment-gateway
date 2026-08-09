@@ -26,4 +26,9 @@ class Store extends BaseModel
     protected $table = 'paymentgateway_stores';
 
     protected $guarded = ['id'];
+
+    public function terminals()
+    {
+        return $this->hasMany(Pos::class, 'store_id');
+    }
 }

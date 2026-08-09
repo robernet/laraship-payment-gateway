@@ -13,6 +13,10 @@ return [
             'presenter' => \Corals\Modules\PaymentGateway\Transformers\IssuerPresenter::class,
             'resource_url' => 'issuers',
         ],
+        'pos' => [
+            'presenter' => \Corals\Modules\PaymentGateway\Transformers\PosPresenter::class,
+            'resource_url' => 'pos',
+        ],
         'payment_reference' => [
             'presenter' => \Corals\Modules\PaymentGateway\Transformers\PaymentReferencePresenter::class,
             'resource_url' => 'payment-references',

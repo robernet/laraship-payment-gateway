@@ -9,6 +9,11 @@ return [
         'title' => 'Issuers',
         'title_singular' => 'Issuer',
     ],
+    'pos' => [
+        'title' => 'POS',
+        'title_singular' => 'POS',
+        'secret_regenerated' => 'Device credentials regenerated. Copy the new secret now - it will not be shown again.',
+    ],
     'invoice' => [
         'title' => 'Invoices',
         'title_singular' => 'Invoice',

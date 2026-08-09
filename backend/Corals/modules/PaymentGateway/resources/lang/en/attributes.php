@@ -4,6 +4,11 @@ return [
     'store' => [
         'name' => 'Name',
     ],
+    'pos' => [
+        'store_id' => 'Store',
+        'name' => 'Name',
+        'code' => 'Code',
+    ],
     'issuer' => [
         'name' => 'Name',
         'sub_id' => 'Sub ID',

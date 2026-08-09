@@ -5,12 +5,14 @@ namespace Corals\Modules\PaymentGateway\Providers;
 use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
+use Corals\Modules\PaymentGateway\Models\Pos;
 use Corals\Modules\PaymentGateway\Models\Shift;
 use Corals\Modules\PaymentGateway\Models\Store;
 use Corals\Modules\PaymentGateway\Models\Transaction;
 use Corals\Modules\PaymentGateway\Policies\InvoicePolicy;
 use Corals\Modules\PaymentGateway\Policies\IssuerPolicy;
 use Corals\Modules\PaymentGateway\Policies\PaymentReferencePolicy;
+use Corals\Modules\PaymentGateway\Policies\PosPolicy;
 use Corals\Modules\PaymentGateway\Policies\ShiftPolicy;
 use Corals\Modules\PaymentGateway\Policies\StorePolicy;
 use Corals\Modules\PaymentGateway\Policies\TransactionPolicy;
@@ -25,6 +27,7 @@ class PaymentGatewayAuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Store::class => StorePolicy::class,
+        Pos::class => PosPolicy::class,
         Issuer::class => IssuerPolicy::class,
         Invoice::class => InvoicePolicy::class,
         PaymentReference::class => PaymentReferencePolicy::class,
