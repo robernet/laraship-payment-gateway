@@ -5,8 +5,8 @@ namespace Corals\Modules\PaymentGateway\Http\Controllers;
 use Corals\Foundation\Http\Controllers\BaseController;
 use Corals\Modules\PaymentGateway\DataTables\PosDataTable;
 use Corals\Modules\PaymentGateway\Http\Requests\PosRequest;
+use Corals\Modules\PaymentGateway\Models\Branch;
 use Corals\Modules\PaymentGateway\Models\Pos;
-use Corals\Modules\PaymentGateway\Models\Store;
 use Corals\Modules\PaymentGateway\Services\PosService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -46,16 +46,16 @@ class PosController extends BaseController
     public function create(PosRequest $request)
     {
         $pos = new Pos();
-        $stores = Store::query()->orderBy('name')->get();
+        $branches = Branch::query()->with('store')->orderBy('name')->get();
 
-        // Pre-select the store when arriving from a Store's POS Terminals panel.
-        $selectedStoreId = $request->get('store_id');
+        // Pre-select the branch when arriving from a Branch's POS panel.
+        $selectedBranchId = $request->get('branch_id');
 
         $this->setViewSharedData([
             'title_singular' => trans('Corals::labels.create_title', ['title' => $this->title_singular]),
         ]);
 
-        return view('PaymentGateway::pos.create_edit')->with(compact('pos', 'stores', 'selectedStoreId'));
+        return view('PaymentGateway::pos.create_edit')->with(compact('pos', 'branches', 'selectedBranchId'));
     }
 
     /**
@@ -65,14 +65,16 @@ class PosController extends BaseController
     public function store(PosRequest $request)
     {
         try {
-            $store = Store::findByHash($request->get('store_id'));
+            $branch = Branch::findByHash($request->get('branch_id'));
 
-            abort_if(!$store, 404);
+            abort_if(!$branch, 404);
 
             $deviceSecret = Str::random(40);
 
             $pos = $this->posService->store($request, Pos::class, [
-                'store_id' => $store->id,
+                'branch_id' => $branch->id,
+                // ponytail: store_id denormalized from branch.store_id (see spec).
+                'store_id' => $branch->store_id,
                 'device_secret' => Hash::make($deviceSecret),
             ]);
 
@@ -132,13 +134,13 @@ class PosController extends BaseController
      */
     public function edit(PosRequest $request, Pos $pos)
     {
-        $stores = Store::query()->orderBy('name')->get();
+        $branches = Branch::query()->with('store')->orderBy('name')->get();
 
         $this->setViewSharedData([
             'title_singular' => trans('Corals::labels.update_title', ['title' => $pos->getIdentifier()]),
         ]);
 
-        return view('PaymentGateway::pos.create_edit')->with(compact('pos', 'stores'));
+        return view('PaymentGateway::pos.create_edit')->with(compact('pos', 'branches'));
     }
 
     /**
@@ -149,11 +151,14 @@ class PosController extends BaseController
     public function update(PosRequest $request, Pos $pos)
     {
         try {
-            $store = Store::findByHash($request->get('store_id'));
+            $branch = Branch::findByHash($request->get('branch_id'));
 
-            abort_if(!$store, 404);
+            abort_if(!$branch, 404);
 
-            $this->posService->update($request, $pos, ['store_id' => $store->id]);
+            $this->posService->update($request, $pos, [
+                'branch_id' => $branch->id,
+                'store_id' => $branch->store_id,
+            ]);
 
             flash(trans('Corals::messages.success.updated', ['item' => $this->title_singular]))->success();
         } catch (\Exception $exception) {

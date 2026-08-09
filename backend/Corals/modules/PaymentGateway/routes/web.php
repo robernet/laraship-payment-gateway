@@ -4,8 +4,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix' => ''], function () {
     Route::resource('stores', 'StoresController');
-    Route::post('stores/{store}/operators', 'StoresController@assignOperator')->name('paymentgateway.stores.operators.assign');
-    Route::delete('stores/{store}/operators/{user}', 'StoresController@removeOperator')->name('paymentgateway.stores.operators.remove');
     Route::resource('branches', 'BranchesController');
     Route::post('branches/{branch}/operators', 'BranchesController@assignOperator')->name('paymentgateway.branches.operators.assign');
     Route::delete('branches/{branch}/operators/{user}', 'BranchesController@removeOperator')->name('paymentgateway.branches.operators.remove');

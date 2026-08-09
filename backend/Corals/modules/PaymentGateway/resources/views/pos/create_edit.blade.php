@@ -19,13 +19,18 @@
                 {!! CoralsForm::openForm($pos) !!}
                 <div class="row">
                     <div class="col-md-4">
-                        {!! CoralsForm::select(
-                            'store_id',
-                            'PaymentGateway::attributes.pos.store_id',
-                            $stores->pluck('name', 'hashed_id'),
-                            true,
-                            old('store_id', ($selectedStoreId ?? null) ?: $pos->store?->getHashedIdAttribute())
-                        ) !!}
+                        <div class="form-group">
+                            <label for="branch_id">{{ trans('PaymentGateway::attributes.pos.branch_id') }} <span class="text-danger">*</span></label>
+                            <select name="branch_id" id="branch_id" class="form-control" required>
+                                <option value="">--</option>
+                                @foreach ($branches as $branch)
+                                    <option value="{{ $branch->hashed_id }}"
+                                        @if ((isset($selectedBranchId) && $selectedBranchId === $branch->hashed_id) || (isset($pos) && $pos->branch_id === $branch->id)) selected @endif>
+                                        {{ $branch->name }} — {{ $branch->store?->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                     <div class="col-md-4">
                         {!! CoralsForm::text('name', 'PaymentGateway::attributes.pos.name', true, null) !!}

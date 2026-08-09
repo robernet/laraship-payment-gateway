@@ -10,6 +10,7 @@ return [
     ],
     'pos' => [
         'store_id' => 'Store',
+        'branch_id' => 'Branch',
         'name' => 'Name',
         'code' => 'Code',
     ],

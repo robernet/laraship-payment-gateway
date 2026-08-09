@@ -2,15 +2,11 @@
 
 namespace Corals\Modules\PaymentGateway\Http\Controllers;
 
-use Corals\Foundation\Facades\Hashids;
 use Corals\Foundation\Http\Controllers\BaseController;
 use Corals\Modules\PaymentGateway\DataTables\StoresDataTable;
 use Corals\Modules\PaymentGateway\Http\Requests\StoreRequest;
-use Corals\Modules\PaymentGateway\Models\OperatorStore;
 use Corals\Modules\PaymentGateway\Models\Store;
 use Corals\Modules\PaymentGateway\Services\StoreService;
-use Corals\User\Models\User;
-use Illuminate\Http\Request;
 
 class StoresController extends BaseController
 {
@@ -84,63 +80,7 @@ class StoresController extends BaseController
             'showModel' => $store,
         ]);
 
-        // Users not yet assigned as operators here - the "Add operator" select.
-        // ponytail: loads all unassigned users; add search/autocomplete when the
-        // user base outgrows a plain <select>.
-        $assignableUsers = User::query()
-            ->whereNotIn('id', $store->operators()->pluck('users.id'))
-            ->orderBy('name')
-            ->get();
-
-        return view('PaymentGateway::stores.show')->with(compact('store', 'assignableUsers'));
-    }
-
-    /**
-     * Assign a User as an operator of this store (lets them POST /pos/login
-     * against it). Not a StoreRequest: that form request treats every POST as
-     * a "create" and would check store.create instead of store.update.
-     *
-     * @param Request $request
-     * @param Store $store
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
-     */
-    public function assignOperator(Request $request, Store $store)
-    {
-        $this->authorize('update', $store);
-
-        $request->validate(['user_id' => ['required']]);
-
-        $userId = Hashids::decode($request->get('user_id'))[0] ?? null;
-
-        abort_if(!$userId || !User::query()->whereKey($userId)->exists(), 404);
-
-        OperatorStore::firstOrCreate(['user_id' => $userId, 'store_id' => $store->id]);
-
-        flash(trans('PaymentGateway::module.store.operator_assigned'))->success();
-
-        return back();
-    }
-
-    /**
-     * Remove a User's operator access to this store.
-     *
-     * @param Store $store
-     * @param string $user Hashid of the user.
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
-     */
-    public function removeOperator(Store $store, string $user)
-    {
-        $this->authorize('update', $store);
-
-        $userId = Hashids::decode($user)[0] ?? null;
-
-        abort_if(!$userId, 404);
-
-        $store->operators()->detach($userId);
-
-        flash(trans('PaymentGateway::module.store.operator_removed'))->success();
-
-        return back();
+        return view('PaymentGateway::stores.show')->with(compact('store'));
     }
 
     /**
