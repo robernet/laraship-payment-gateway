@@ -5,6 +5,10 @@ return [
         'autopay_schedule' => [
             'resource_url' => 'autopay-schedules',
         ],
+        'branch' => [
+            'presenter' => \Corals\Modules\PaymentGateway\Transformers\BranchPresenter::class,
+            'resource_url' => 'branches',
+        ],
         'invoice' => [
             'presenter' => \Corals\Modules\PaymentGateway\Transformers\InvoicePresenter::class,
             'resource_url' => 'invoices',

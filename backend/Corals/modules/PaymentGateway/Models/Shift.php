@@ -37,6 +37,11 @@ class Shift extends BaseModel
         return $this->belongsTo(Store::class, 'store_id');
     }
 
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
     public function operator()
     {
         return $this->belongsTo(User::class, 'operator_id');

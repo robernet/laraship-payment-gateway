@@ -50,6 +50,11 @@ class Pos extends BaseModel implements AuthenticatableContract, AuthorizableCont
         return $this->belongsTo(Store::class, 'store_id');
     }
 
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
     /**
      * Generate and persist a new device secret, returning the plaintext once -
      * only the hash is stored, mirroring how a password is never recoverable.
