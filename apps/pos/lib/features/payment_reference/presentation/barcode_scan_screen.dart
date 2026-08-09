@@ -29,7 +29,15 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan barcode')),
+      appBar: AppBar(
+        title: const Text('Scan barcode'),
+        leading: IconButton(
+          key: const Key('back_to_main_button'),
+          icon: const Icon(Icons.home),
+          tooltip: 'Back to main',
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: MobileScanner(
         key: const Key('barcode_scanner_view'),
         controller: _controller,
