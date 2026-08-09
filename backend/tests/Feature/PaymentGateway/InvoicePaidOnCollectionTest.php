@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\PaymentGateway;
 
+use Corals\Modules\PaymentGateway\Models\Branch;
 use Corals\Modules\PaymentGateway\Models\Invoice;
 use Corals\Modules\PaymentGateway\Models\Issuer;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
@@ -67,13 +68,16 @@ class InvoicePaidOnCollectionTest extends TestCase
             'password' => 'secret-password',
         ]);
 
+        $branch = Branch::create(['store_id' => $store->id, 'name' => 'Branch ' . $suffix]);
+
         Shift::create([
             'store_id' => $store->id,
+            'branch_id' => $branch->id,
             'operator_id' => $operator->id,
             'opened_at' => now(),
         ]);
 
-        $token = $operator->createToken('collect-operator')->plainTextToken;
+        $token = $operator->createToken('collect-operator', ['*', 'branch:' . $branch->getHashedIdAttribute()])->plainTextToken;
 
         return ['Authorization' => 'Bearer ' . $token];
     }

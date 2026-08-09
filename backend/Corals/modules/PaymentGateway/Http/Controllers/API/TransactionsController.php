@@ -5,12 +5,14 @@ namespace Corals\Modules\PaymentGateway\Http\Controllers\API;
 use Corals\Foundation\Http\Controllers\APIBaseController;
 use Corals\Modules\PaymentGateway\Classes\CollectionValidator;
 use Corals\Modules\PaymentGateway\Http\Requests\TransactionRequest;
+use Corals\Modules\PaymentGateway\Models\Branch;
 use Corals\Modules\PaymentGateway\Models\PaymentReference;
 use Corals\Modules\PaymentGateway\Models\Pos;
 use Corals\Modules\PaymentGateway\Models\Shift;
 use Corals\Modules\PaymentGateway\Models\Transaction;
 use Corals\Modules\PaymentGateway\Services\TransactionService;
 use Corals\Modules\PaymentGateway\Transformers\API\TransactionPresenter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class TransactionsController extends APIBaseController
@@ -54,7 +56,18 @@ class TransactionsController extends APIBaseController
 
             $user = $request->user();
 
-            $openShiftQuery = Shift::query()->whereNull('closed_at')->latest('opened_at');
+            $token = $request->user()->currentAccessToken();
+
+            $branchAbility = collect($token?->abilities ?? [])
+                ->first(fn ($ability) => Str::startsWith($ability, 'branch:'));
+
+            $branch = $branchAbility ? Branch::findByHash(Str::after($branchAbility, 'branch:')) : null;
+
+            if (!$branch) {
+                throw ValidationException::withMessages(['shift' => ['This token is not scoped to a branch.']]);
+            }
+
+            $openShiftQuery = Shift::query()->whereNull('closed_at')->where('branch_id', $branch->id)->latest('opened_at');
 
             $shift = $user instanceof Pos
                 ? $openShiftQuery->where('pos_id', $user->id)->first()
