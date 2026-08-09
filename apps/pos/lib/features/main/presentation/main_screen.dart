@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../widgets/pos_app_bar.dart';
+import '../../../widgets/pos_confirm_dialog.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({
@@ -16,6 +17,34 @@ class MainScreen extends StatelessWidget {
   final VoidCallback onEndShift;
   final VoidCallback onLogout;
 
+  Future<void> _confirmEndShift(BuildContext context) async {
+    final confirmed = await showPosConfirmDialog(
+      context,
+      title: 'End shift?',
+      message: 'This takes you to the shift close screen to count cash and reconcile.',
+      confirmLabel: 'End shift',
+      confirmKey: const Key('end_shift_dialog_confirm'),
+      cancelKey: const Key('end_shift_dialog_cancel'),
+    );
+    if (confirmed) onEndShift();
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showPosConfirmDialog(
+      context,
+      title: 'Log out?',
+      message: "You'll need to log in again to continue.",
+      confirmLabel: 'Log out',
+      confirmKey: const Key('logout_dialog_confirm'),
+      cancelKey: const Key('logout_dialog_cancel'),
+    );
+    if (!confirmed) return;
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logged out')));
+    }
+    onLogout();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,13 +53,13 @@ class MainScreen extends StatelessWidget {
         actions: [
           IconButton(
             key: const Key('main_end_shift'),
-            onPressed: onEndShift,
+            onPressed: () => _confirmEndShift(context),
             icon: const Icon(Icons.point_of_sale),
             tooltip: 'End shift',
           ),
           IconButton(
             key: const Key('main_logout'),
-            onPressed: onLogout,
+            onPressed: () => _confirmLogout(context),
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
           ),
