@@ -107,6 +107,13 @@ class ArtifactGenerationTest extends TestCase
             'id' => $paymentReference->id,
             'reference' => $paymentReference->reference,
         ]);
+
+        // The pay-format slip embeds the barcode as an <img> data URI.
+        $html = view('PaymentGateway::payment_references.pay_format', [
+            'paymentReference' => $paymentReference,
+            'barcodeDataUri' => 'data:image/png;base64,TESTBARCODE',
+        ])->render();
+        $this->assertStringContainsString('src="data:image/png;base64,TESTBARCODE"', $html);
     }
 
     #[Test]

@@ -25,6 +25,11 @@
         @if ($paymentReference->due_date)
             <div class="row"><span class="label">Due date:</span> {{ $paymentReference->due_date->format('Y-m-d') }}</div>
         @endif
+        @if (!empty($barcodeDataUri))
+            <div class="row" style="margin-top: 16px; text-align: center;">
+                <img src="{{ $barcodeDataUri }}" alt="{{ $paymentReference->reference }}" style="max-width: 100%;">
+            </div>
+        @endif
     </div>
 </body>
 </html>
