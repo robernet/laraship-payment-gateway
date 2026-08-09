@@ -4,6 +4,10 @@ return [
     'store' => [
         'title' => 'Stores',
         'title_singular' => 'Store',
+        'operators' => 'Operators',
+        'add_operator' => 'Add operator',
+        'operator_assigned' => 'Operator assigned to this store.',
+        'operator_removed' => 'Operator removed from this store.',
     ],
     'issuer' => [
         'title' => 'Issuers',

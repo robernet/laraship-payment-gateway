@@ -84,5 +84,64 @@
             </tbody>
         </table>
     @endcomponent
+
+    @component('components.box')
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <h4 class="d-inline">{{ trans('PaymentGateway::module.store.operators') }}</h4>
+            </div>
+        </div>
+
+        @can('update', $store)
+            <form method="POST" action="{{ route('paymentgateway.stores.operators.assign', $store->hashed_id) }}"
+                  class="form-inline mb-3">
+                @csrf
+                <select name="user_id" class="form-control mr-2" required>
+                    <option value="">--</option>
+                    @foreach ($assignableUsers as $user)
+                        <option value="{{ \Corals\Foundation\Facades\Hashids::encode($user->id) }}">
+                            {{ $user->name }} ({{ $user->email }})
+                        </option>
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary">
+                    {{ trans('PaymentGateway::module.store.add_operator') }}
+                </button>
+            </form>
+        @endcan
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{{ trans('PaymentGateway::attributes.pos.name') }}</th>
+                    <th>Email</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($store->operators()->orderBy('name')->get() as $operator)
+                    <tr>
+                        <td>{{ $operator->name }}</td>
+                        <td>{{ $operator->email }}</td>
+                        <td class="text-right">
+                            @can('update', $store)
+                                <form method="POST" class="d-inline"
+                                      action="{{ route('paymentgateway.stores.operators.remove', [$store->hashed_id, \Corals\Foundation\Facades\Hashids::encode($operator->id)]) }}"
+                                      onsubmit="return confirm('Remove this operator from the store?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                </form>
+                            @endcan
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">No operators yet.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    @endcomponent
 @endsection
 
