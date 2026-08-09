@@ -119,6 +119,12 @@ class BranchesController extends BaseController
                 'level' => 'success',
                 'message' => trans('Corals::messages.success.deleted', ['item' => $this->title_singular]),
             ];
+        } catch (\Illuminate\Database\QueryException $exception) {
+            log_exception($exception, Branch::class, 'destroy');
+            $message = [
+                'level' => 'error',
+                'message' => 'This branch still has POS terminals, operators, or shifts assigned to it and cannot be deleted.',
+            ];
         } catch (\Exception $exception) {
             log_exception($exception, Branch::class, 'destroy');
             $message = ['level' => 'error', 'message' => $exception->getMessage()];
