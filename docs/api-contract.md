@@ -3,7 +3,7 @@
 Single source of truth for the HTTP boundary between the Laraship backend and any decoupled client (Flutter / SPA). Change this file **first**; both sides follow it. Import it from the root `CLAUDE.md` (`@docs/api-contract.md`) so it is always in context.
 
 ## Base
-- Base URL from environment. Never hardcode.
+- Base URL comes from a bundled config asset, not a literal in Dart source — each app declares `assets/config/api_config.json` (`{ "api_base": "<url>" }`) in its `pubspec.yaml`, loads it at startup before `runApp`, and passes the value into its `ApiClient`. Edit the JSON file per environment/machine; never hardcode the URL directly in a `.dart` file.
 - Version prefix: `/api/v1` (follow existing routes if they differ).
 - JSON only. Requests send `Accept: application/json`.
 

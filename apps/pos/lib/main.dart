@@ -1,10 +1,22 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core_providers.dart';
 import 'router.dart';
 
-void main() {
-  runApp(const ProviderScope(child: PosApp()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final configJson = await rootBundle.loadString('assets/config/api_config.json');
+  final apiBase = (jsonDecode(configJson) as Map<String, dynamic>)['api_base'] as String;
+
+  runApp(ProviderScope(
+    overrides: [apiBaseUrlProvider.overrideWithValue(apiBase)],
+    child: const PosApp(),
+  ));
 }
 
 class PosApp extends ConsumerWidget {
