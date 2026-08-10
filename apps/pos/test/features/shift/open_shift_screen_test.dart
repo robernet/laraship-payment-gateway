@@ -22,6 +22,7 @@ void main() {
     final fake = FakePaymentGatewayService(
       openShiftResult: Shift(
         id: 'sh1',
+        branchId: 'b1',
         storeId: 's1',
         operatorId: 'op1',
         openedAt: DateTime.parse('2026-08-04T12:00:00.000Z'),
@@ -31,7 +32,7 @@ void main() {
       overrides: [
         paymentGatewayServiceProvider.overrideWithValue(fake),
         authProvider.overrideWith(
-          () => _SeededAuthNotifier(const PosSession(token: 't', abilities: [], storeId: 's1')),
+          () => _SeededAuthNotifier(const PosSession(token: 't', abilities: [], branchId: 'b1', storeId: 's1')),
         ),
       ],
     );
@@ -58,7 +59,7 @@ void main() {
       overrides: [
         paymentGatewayServiceProvider.overrideWithValue(fake),
         authProvider.overrideWith(
-          () => _SeededAuthNotifier(const PosSession(token: 't', abilities: [], storeId: 's1')),
+          () => _SeededAuthNotifier(const PosSession(token: 't', abilities: [], branchId: 'b1', storeId: 's1')),
         ),
       ],
     );

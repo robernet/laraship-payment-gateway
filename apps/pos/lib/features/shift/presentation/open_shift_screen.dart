@@ -26,7 +26,7 @@ class _OpenShiftScreenState extends ConsumerState<OpenShiftScreen> {
       _error = null;
     });
     try {
-      await ref.read(shiftProvider.notifier).open(storeId: session.storeId);
+      await ref.read(shiftProvider.notifier).open(branchId: session.branchId);
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } finally {
