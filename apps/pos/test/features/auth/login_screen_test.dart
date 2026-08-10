@@ -26,17 +26,17 @@ Future<ProviderContainer> _pumpLogin(WidgetTester tester, FakePaymentGatewayServ
 void main() {
   testWidgets('successful login stores the session', (tester) async {
     final fake = FakePaymentGatewayService(
-      loginResult: const PosSession(token: 't', abilities: ['payment:lookup'], storeId: 's1'),
+      loginResult: const PosSession(token: 't', abilities: ['payment:lookup'], branchId: 'b1', storeId: 's1'),
     );
     final container = await _pumpLogin(tester, fake);
 
     await tester.enterText(find.byKey(const Key('login_email')), 'op@example.test');
     await tester.enterText(find.byKey(const Key('login_password')), 'secret');
-    await tester.enterText(find.byKey(const Key('login_store_id')), 's1');
+    await tester.enterText(find.byKey(const Key('login_branch_id')), 'b1');
     await tester.tap(find.byKey(const Key('login_submit')));
     await tester.pumpAndSettle();
 
-    expect(container.read(authProvider)?.storeId, 's1');
+    expect(container.read(authProvider)?.branchId, 'b1');
   });
 
   testWidgets('failed login shows the error and leaves the session empty', (tester) async {
@@ -47,7 +47,7 @@ void main() {
 
     await tester.enterText(find.byKey(const Key('login_email')), 'op@example.test');
     await tester.enterText(find.byKey(const Key('login_password')), 'wrong');
-    await tester.enterText(find.byKey(const Key('login_store_id')), 's1');
+    await tester.enterText(find.byKey(const Key('login_branch_id')), 'b1');
     await tester.tap(find.byKey(const Key('login_submit')));
     await tester.pumpAndSettle();
 

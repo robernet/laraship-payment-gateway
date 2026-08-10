@@ -15,7 +15,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
-  final _storeId = TextEditingController();
+  final _branchId = TextEditingController();
   bool _loading = false;
   String? _error;
 
@@ -28,7 +28,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(authProvider.notifier).login(
             email: _email.text,
             password: _password.text,
-            storeId: _storeId.text,
+            branchId: _branchId.text,
           );
     } on ApiException catch (e) {
       setState(() => _error = e.message);
@@ -41,7 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void dispose() {
     _email.dispose();
     _password.dispose();
-    _storeId.dispose();
+    _branchId.dispose();
     super.dispose();
   }
 
@@ -66,9 +66,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               obscureText: true,
             ),
             TextField(
-              controller: _storeId,
-              key: const Key('login_store_id'),
-              decoration: const InputDecoration(labelText: 'Store ID'),
+              controller: _branchId,
+              key: const Key('login_branch_id'),
+              decoration: const InputDecoration(labelText: 'Branch ID'),
             ),
             const SizedBox(height: 16),
             if (_error != null) Text(_error!),
