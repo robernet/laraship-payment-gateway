@@ -20,7 +20,7 @@ class TransactionTransformer extends APIBaseTransformer
             'shift_id' => $transaction->shift?->hashed_id,
             'amount' => $transaction->amount_minor,
             'currency' => $transaction->currency,
-            'collected_at' => format_date($transaction->collected_at),
+            'collected_at' => $transaction->collected_at?->toIso8601String(),
             'status' => $transaction->status,
             'created_at' => format_date($transaction->created_at),
             'updated_at' => format_date($transaction->updated_at),

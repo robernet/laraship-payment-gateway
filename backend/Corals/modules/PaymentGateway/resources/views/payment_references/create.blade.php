@@ -156,8 +156,12 @@
         (function ($) {
             function toggleInvoiceMode() {
                 var mode = $('input[name="invoice_mode"]:checked').val();
-                $('#new-invoice-block').toggle(mode === 'new');
-                $('#existing-invoice-block').toggle(mode !== 'new');
+                var newActive = mode === 'new';
+                // Disable the inactive block's fields: a hidden `required` control (invoice_id)
+                // otherwise blocks submission with an unfocusable-validation error, and stray
+                // cross-mode fields would be submitted too.
+                $('#new-invoice-block').toggle(newActive).find(':input').prop('disabled', !newActive);
+                $('#existing-invoice-block').toggle(!newActive).find(':input').prop('disabled', newActive);
             }
 
             function toggleAutopayFields() {
