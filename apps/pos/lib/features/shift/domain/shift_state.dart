@@ -19,8 +19,8 @@ class ShiftNotifier extends Notifier<ShiftState> {
   @override
   ShiftState build() => const ShiftState();
 
-  Future<void> open({required String storeId}) async {
-    final shift = await ref.read(paymentGatewayServiceProvider).openShift(storeId: storeId);
+  Future<void> open({required String branchId}) async {
+    final shift = await ref.read(paymentGatewayServiceProvider).openShift(branchId: branchId);
     state = ShiftState(shift: shift);
   }
 

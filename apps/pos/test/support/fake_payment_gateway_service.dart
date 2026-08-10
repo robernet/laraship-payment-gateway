@@ -31,7 +31,7 @@ class FakePaymentGatewayService implements PaymentGatewayService {
   int? lastCloseCountedAmountMinor;
 
   @override
-  Future<PosSession> login({required String email, required String password, required String storeId}) async {
+  Future<PosSession> login({required String email, required String password, required String branchId}) async {
     if (loginError != null) throw loginError!;
     return loginResult!;
   }
@@ -54,7 +54,7 @@ class FakePaymentGatewayService implements PaymentGatewayService {
   }
 
   @override
-  Future<Shift> openShift({required String storeId}) async {
+  Future<Shift> openShift({required String branchId}) async {
     if (openShiftError != null) throw openShiftError!;
     return openShiftResult!;
   }
