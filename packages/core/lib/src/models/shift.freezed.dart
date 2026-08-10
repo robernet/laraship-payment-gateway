@@ -15,7 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Shift {
 
- String get id;@JsonKey(name: 'branch_id') String get branchId;@JsonKey(name: 'store_id') String get storeId;@JsonKey(name: 'operator_id') String? get operatorId;@JsonKey(name: 'pos_id') String? get posId;@JsonKey(name: 'opened_at') DateTime get openedAt;@JsonKey(name: 'closed_at') DateTime? get closedAt;@JsonKey(name: 'counted_amount_minor') int? get countedAmountMinor;@JsonKey(name: 'discrepancy_minor') int? get discrepancyMinor;
+ String get id;@JsonKey(name: 'branch_id') String get branchId;@JsonKey(name: 'store_id') String get storeId;@JsonKey(name: 'operator_id') String? get operatorId;// Mirrors the API contract's response shape; not consumed by this app yet.
+@JsonKey(name: 'pos_id') String? get posId;@JsonKey(name: 'opened_at') DateTime get openedAt;@JsonKey(name: 'closed_at') DateTime? get closedAt;@JsonKey(name: 'counted_amount_minor') int? get countedAmountMinor;@JsonKey(name: 'discrepancy_minor') int? get discrepancyMinor;
 /// Create a copy of Shift
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -224,6 +225,7 @@ class _Shift implements Shift {
 @override@JsonKey(name: 'branch_id') final  String branchId;
 @override@JsonKey(name: 'store_id') final  String storeId;
 @override@JsonKey(name: 'operator_id') final  String? operatorId;
+// Mirrors the API contract's response shape; not consumed by this app yet.
 @override@JsonKey(name: 'pos_id') final  String? posId;
 @override@JsonKey(name: 'opened_at') final  DateTime openedAt;
 @override@JsonKey(name: 'closed_at') final  DateTime? closedAt;

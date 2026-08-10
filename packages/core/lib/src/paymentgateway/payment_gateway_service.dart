@@ -15,6 +15,7 @@ class PosSession {
   final String token;
   final List<String> abilities;
   final String branchId;
+  // Mirrors the API contract's response shape; not consumed by this app yet.
   final String storeId;
 }
 

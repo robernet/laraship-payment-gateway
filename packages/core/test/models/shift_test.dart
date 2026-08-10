@@ -31,4 +31,23 @@ void main() {
     expect(closed.closedAt, DateTime.parse('2026-08-04T20:00:00.000Z'));
     expect(closed.discrepancyMinor, -500);
   });
+
+  test('Shift round-trips a device-login shape (pos_id set, operator_id null)', () {
+    final deviceJson = {
+      'id': 'sh2',
+      'branch_id': 'b1',
+      'store_id': 'st1',
+      'operator_id': null,
+      'pos_id': 'pos1',
+      'opened_at': '2026-08-04T12:00:00.000Z',
+      'closed_at': null,
+      'counted_amount_minor': null,
+      'discrepancy_minor': null,
+    };
+
+    final device = Shift.fromJson(deviceJson);
+    expect(device.operatorId, isNull);
+    expect(device.posId, 'pos1');
+    expect(Shift.fromJson(device.toJson()), device);
+  });
 }
