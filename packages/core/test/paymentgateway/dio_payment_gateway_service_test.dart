@@ -21,20 +21,22 @@ void main() {
       'data': {
         'token': 'plain-text-token',
         'abilities': ['payment:lookup', 'payment:collect'],
+        'branch_id': 'b1',
         'store_id': 'st1',
       },
     });
     final service = _serviceWith(adapter, tokens: tokens);
 
-    final session = await service.login(email: 'op@example.test', password: 'secret', storeId: 'st1');
+    final session = await service.login(email: 'op@example.test', password: 'secret', branchId: 'b1');
 
     expect(session.token, 'plain-text-token');
     expect(session.abilities, ['payment:lookup', 'payment:collect']);
+    expect(session.branchId, 'b1');
     expect(session.storeId, 'st1');
     expect(tokens.written, 'plain-text-token');
     expect(adapter.lastRequest!.path, '/pos/login');
     expect(adapter.lastRequest!.method, 'POST');
-    expect(adapter.lastRequest!.data, {'email': 'op@example.test', 'password': 'secret', 'store_id': 'st1'});
+    expect(adapter.lastRequest!.data, {'email': 'op@example.test', 'password': 'secret', 'branch_id': 'b1'});
   });
 
   test('lookupReference GETs the lookup-by-reference-string route', () async {
@@ -112,6 +114,7 @@ void main() {
     final adapter = FakeHttpAdapter(200, {
       'data': {
         'id': 'sh1',
+        'branch_id': 'b1',
         'store_id': 'st1',
         'operator_id': 'op1',
         'opened_at': '2026-08-04T12:00:00.000Z',
@@ -122,17 +125,18 @@ void main() {
     });
     final service = _serviceWith(adapter);
 
-    final shift = await service.openShift(storeId: 'st1');
+    final shift = await service.openShift(branchId: 'b1');
 
     expect(shift.id, 'sh1');
     expect(adapter.lastRequest!.path, '/shifts');
-    expect(adapter.lastRequest!.data, {'store_id': 'st1'});
+    expect(adapter.lastRequest!.data, {'branch_id': 'b1'});
   });
 
   test('closeShift PATCHes /shifts/{id} and returns the computed discrepancy', () async {
     final adapter = FakeHttpAdapter(200, {
       'data': {
         'id': 'sh1',
+        'branch_id': 'b1',
         'store_id': 'st1',
         'operator_id': 'op1',
         'opened_at': '2026-08-04T12:00:00.000Z',

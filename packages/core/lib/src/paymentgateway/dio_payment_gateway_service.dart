@@ -15,16 +15,17 @@ class DioPaymentGatewayService implements PaymentGatewayService {
   Future<PosSession> login({
     required String email,
     required String password,
-    required String storeId,
+    required String branchId,
   }) async {
     final json = await _api.post<Map<String, dynamic>>(
       '/pos/login',
       (m) => m,
-      body: {'email': email, 'password': password, 'store_id': storeId},
+      body: {'email': email, 'password': password, 'branch_id': branchId},
     );
     final session = PosSession(
       token: json['token'] as String,
       abilities: (json['abilities'] as List).cast<String>(),
+      branchId: json['branch_id'] as String,
       storeId: json['store_id'] as String,
     );
     await _tokens.write(session.token);
@@ -50,8 +51,8 @@ class DioPaymentGatewayService implements PaymentGatewayService {
   }
 
   @override
-  Future<Shift> openShift({required String storeId}) {
-    return _api.post('/shifts', Shift.fromJson, body: {'store_id': storeId});
+  Future<Shift> openShift({required String branchId}) {
+    return _api.post('/shifts', Shift.fromJson, body: {'branch_id': branchId});
   }
 
   @override

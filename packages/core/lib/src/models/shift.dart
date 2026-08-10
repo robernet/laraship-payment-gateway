@@ -7,8 +7,10 @@ part 'shift.g.dart';
 abstract class Shift with _$Shift {
   const factory Shift({
     required String id,
+    @JsonKey(name: 'branch_id') required String branchId,
     @JsonKey(name: 'store_id') required String storeId,
-    @JsonKey(name: 'operator_id') required String operatorId,
+    @JsonKey(name: 'operator_id') String? operatorId,
+    @JsonKey(name: 'pos_id') String? posId,
     @JsonKey(name: 'opened_at') required DateTime openedAt,
     @JsonKey(name: 'closed_at') DateTime? closedAt,
     @JsonKey(name: 'counted_amount_minor') int? countedAmountMinor,
