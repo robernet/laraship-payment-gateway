@@ -44,7 +44,7 @@ class CollectConfirmScreen extends ConsumerWidget {
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Amount due: ${reference.amount} ${reference.currency}'),
+                child: Text('Amount due: ${Money.format(reference.amount, reference.currency)}'),
               ),
             ),
             const SizedBox(height: 16),

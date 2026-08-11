@@ -32,7 +32,7 @@ class ReceiptScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Reference: ${reference.reference}'),
-                    Text('Amount: ${transaction.amount} ${transaction.currency}'),
+                    Text('Amount: ${Money.format(transaction.amount, transaction.currency)}'),
                     Text('Folio: ${reference.folio}'),
                     Text('Collected at: ${transaction.collectedAt.toIso8601String()}'),
                   ],

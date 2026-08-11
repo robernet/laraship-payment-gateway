@@ -26,7 +26,7 @@ class PaymentReferenceTransformer extends BaseTransformer
             'reference' => HtmlElement('a', ['href' => $paymentReference->getShowURL()], $paymentReference->reference),
             'issuer_name' => $paymentReference->issuer?->name,
             'status' => $paymentReference->status,
-            'amount_minor' => $paymentReference->amount_minor,
+            'amount_minor' => number_format($paymentReference->amount_minor / 100, 2),
             'currency' => $paymentReference->currency,
             'due_date' => $paymentReference->due_date?->toDateString(),
             'created_at' => format_date($paymentReference->created_at),

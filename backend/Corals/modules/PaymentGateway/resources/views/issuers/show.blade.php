@@ -43,7 +43,7 @@
                     <tr>
                         <td>{{ $paymentReference->reference }}</td>
                         <td>{{ $paymentReference->status }}</td>
-                        <td>{{ $paymentReference->amount_minor }} {{ $paymentReference->currency }}</td>
+                        <td>{{ number_format($paymentReference->amount_minor / 100, 2) }} {{ $paymentReference->currency }}</td>
                     </tr>
                 @endforeach
             </tbody>

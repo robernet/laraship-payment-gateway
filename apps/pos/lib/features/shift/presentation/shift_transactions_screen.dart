@@ -1,3 +1,4 @@
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,7 +37,7 @@ class ShiftTransactionsScreen extends ConsumerWidget {
                 for (final t in transactions)
                   Card(
                     child: ListTile(
-                      title: Text('${t.amount} ${t.currency}'),
+                      title: Text(Money.format(t.amount, t.currency)),
                       subtitle: Text(t.collectedAt.toIso8601String()),
                       trailing: Text(t.status),
                     ),

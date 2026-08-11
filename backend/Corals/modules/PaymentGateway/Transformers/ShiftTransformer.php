@@ -27,8 +27,8 @@ class ShiftTransformer extends BaseTransformer
             'operator_name' => $shift->operator?->name,
             'opened_at' => format_date($shift->opened_at),
             'closed_at' => $shift->closed_at ? format_date($shift->closed_at) : null,
-            'counted_amount_minor' => $shift->counted_amount_minor,
-            'discrepancy_minor' => $shift->discrepancy_minor,
+            'counted_amount_minor' => $shift->counted_amount_minor !== null ? number_format($shift->counted_amount_minor / 100, 2) : null,
+            'discrepancy_minor' => $shift->discrepancy_minor !== null ? number_format($shift->discrepancy_minor / 100, 2) : null,
         ];
 
         return parent::transformResponse($transformedArray);

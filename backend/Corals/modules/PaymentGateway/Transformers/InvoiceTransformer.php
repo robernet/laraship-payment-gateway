@@ -25,7 +25,7 @@ class InvoiceTransformer extends BaseTransformer
             'id' => $invoice->hashed_id,
             'issuer_name' => HtmlElement('a', ['href' => $invoice->getShowURL()], $invoice->issuer?->name),
             'customer_id' => $invoice->customer_id,
-            'amount_minor' => $invoice->amount_minor,
+            'amount_minor' => number_format($invoice->amount_minor / 100, 2),
             'currency' => $invoice->currency,
             'due_date' => $invoice->due_date?->toDateString(),
             'status' => $invoice->status,
