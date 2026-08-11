@@ -40,7 +40,7 @@ class PosAuthController extends APIPublicController
         $branch = Branch::findByHash($request->get('branch_id'));
 
         if (!$branch) {
-            throw ValidationException::withMessages(['branch_id' => [trans('Corals::messages.errors.not_found')]]);
+            throw ValidationException::withMessages(['branch_id' => ['This branch was not found.']]);
         }
 
         $isAssigned = OperatorBranch::query()
