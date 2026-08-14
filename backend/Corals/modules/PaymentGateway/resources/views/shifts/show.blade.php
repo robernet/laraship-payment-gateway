@@ -21,10 +21,10 @@
                 <p><strong>{{ trans('PaymentGateway::attributes.shift.closed_at') }}:</strong> {{ $shift->closed_at ? format_date($shift->closed_at) : '-' }}</p>
             </div>
             <div class="col-md-6">
-                <p><strong>{{ trans('PaymentGateway::attributes.shift.counted_amount_minor') }}:</strong> {{ $shift->counted_amount_minor ?? '-' }}</p>
+                <p><strong>{{ trans('PaymentGateway::attributes.shift.counted_amount_minor') }}:</strong> {{ $shift->counted_amount_minor !== null ? number_format($shift->counted_amount_minor / 100, 2) : '-' }}</p>
                 <p><strong>{{ trans('PaymentGateway::attributes.shift.discrepancy_minor') }}:</strong>
                     <span class="{{ $shift->discrepancy_minor > 0 ? 'text-success' : ($shift->discrepancy_minor < 0 ? 'text-danger' : '') }}">
-                        {{ $shift->discrepancy_minor ?? '-' }}
+                        {{ $shift->discrepancy_minor !== null ? number_format($shift->discrepancy_minor / 100, 2) : '-' }}
                     </span>
                 </p>
             </div>
@@ -45,7 +45,7 @@
                 @foreach ($shift->transactions as $transaction)
                     <tr>
                         <td>{{ $transaction->paymentReference?->reference }}</td>
-                        <td>{{ $transaction->amount_minor }} {{ $transaction->currency }}</td>
+                        <td>{{ number_format($transaction->amount_minor / 100, 2) }} {{ $transaction->currency }}</td>
                         <td>{{ format_date($transaction->collected_at) }}</td>
                     </tr>
                 @endforeach

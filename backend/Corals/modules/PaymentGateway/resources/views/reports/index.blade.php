@@ -29,7 +29,7 @@
                 <tr>
                     <th>{{ trans('PaymentGateway::attributes.store.name') }}</th>
                     <th>Transactions</th>
-                    <th>Total (minor units)</th>
+                    <th>Total</th>
                 </tr>
             </thead>
             <tbody>
@@ -37,7 +37,7 @@
                     <tr>
                         <td>{{ $row->issuer_name }}</td>
                         <td>{{ $row->transaction_count }}</td>
-                        <td>{{ $row->total_minor }}</td>
+                        <td>{{ number_format($row->total_minor / 100, 2) }}</td>
                     </tr>
                 @empty
                     <tr><td colspan="3">No data.</td></tr>
@@ -53,7 +53,7 @@
                 <tr>
                     <th>{{ trans('PaymentGateway::attributes.store.name') }}</th>
                     <th>Transactions</th>
-                    <th>Total (minor units)</th>
+                    <th>Total</th>
                 </tr>
             </thead>
             <tbody>
@@ -61,7 +61,7 @@
                     <tr>
                         <td>{{ $row->store_name }}</td>
                         <td>{{ $row->transaction_count }}</td>
-                        <td>{{ $row->total_minor }}</td>
+                        <td>{{ number_format($row->total_minor / 100, 2) }}</td>
                     </tr>
                 @empty
                     <tr><td colspan="3">No data.</td></tr>

@@ -21,7 +21,7 @@
                 <p><strong>{{ trans('PaymentGateway::attributes.invoice.status') }}:</strong> {{ $invoice->status }}</p>
             </div>
             <div class="col-md-6">
-                <p><strong>{{ trans('PaymentGateway::attributes.invoice.amount') }}:</strong> {{ $invoice->amount_minor }} {{ $invoice->currency }}</p>
+                <p><strong>{{ trans('PaymentGateway::attributes.invoice.amount') }}:</strong> {{ number_format($invoice->amount_minor / 100, 2) }} {{ $invoice->currency }}</p>
                 <p><strong>{{ trans('PaymentGateway::attributes.invoice.due_date') }}:</strong> {{ $invoice->due_date?->toDateString() }}</p>
                 <p><strong>{{ trans('PaymentGateway::attributes.invoice.description') }}:</strong> {{ $invoice->description ?? '-' }}</p>
             </div>

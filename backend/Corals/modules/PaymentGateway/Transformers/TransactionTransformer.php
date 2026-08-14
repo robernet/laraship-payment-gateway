@@ -26,7 +26,7 @@ class TransactionTransformer extends BaseTransformer
             'reference' => HtmlElement('a', ['href' => $transaction->getShowURL()], $transaction->paymentReference?->reference),
             'store_name' => $transaction->shift?->store?->name,
             'operator_name' => $transaction->shift?->operator?->name,
-            'amount_minor' => $transaction->amount_minor,
+            'amount_minor' => number_format($transaction->amount_minor / 100, 2),
             'currency' => $transaction->currency,
             'status' => $transaction->status,
             'collected_at' => format_date($transaction->collected_at),

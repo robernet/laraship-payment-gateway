@@ -65,7 +65,7 @@ return [
         'operator' => 'Operator',
         'opened_at' => 'Opened at',
         'closed_at' => 'Closed at',
-        'counted_amount_minor' => 'Counted amount (minor units)',
-        'discrepancy_minor' => 'Discrepancy (minor units)',
+        'counted_amount_minor' => 'Counted amount',
+        'discrepancy_minor' => 'Discrepancy',
     ],
 ];

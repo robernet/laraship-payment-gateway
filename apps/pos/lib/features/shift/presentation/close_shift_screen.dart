@@ -86,7 +86,7 @@ class _CloseShiftScreenState extends ConsumerState<CloseShiftScreen> {
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('Discrepancy: ${closed.discrepancyMinor ?? 0}'),
+            child: Text('Discrepancy: ${Money.format(closed.discrepancyMinor ?? 0)}'),
           ),
         ),
         const SizedBox(height: 16),

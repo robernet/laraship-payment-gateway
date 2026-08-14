@@ -20,7 +20,7 @@
                 <p><strong>{{ trans('PaymentGateway::attributes.transaction.operator') }}:</strong> {{ $transaction->shift?->operator?->name }}</p>
             </div>
             <div class="col-md-6">
-                <p><strong>{{ trans('PaymentGateway::attributes.transaction.amount') }}:</strong> {{ $transaction->amount_minor }} {{ $transaction->currency }}</p>
+                <p><strong>{{ trans('PaymentGateway::attributes.transaction.amount') }}:</strong> {{ number_format($transaction->amount_minor / 100, 2) }} {{ $transaction->currency }}</p>
                 <p><strong>{{ trans('PaymentGateway::attributes.transaction.status') }}:</strong> {{ $transaction->status }}</p>
                 <p><strong>{{ trans('PaymentGateway::attributes.transaction.collected_at') }}:</strong> {{ format_date($transaction->collected_at) }}</p>
             </div>

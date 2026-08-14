@@ -52,13 +52,13 @@
                                         @foreach ($invoices->groupBy(fn ($invoice) => $invoice->issuer->name) as $issuerName => $issuerInvoices)
                                             <optgroup label="{{ $issuerName }}">
                                                 @foreach ($issuerInvoices as $invoice)
-                                                    <option value="{{ $invoice->getHashedIdAttribute() }}" @selected(old('invoice_id') === $invoice->getHashedIdAttribute())>{{ $invoice->customer_id }} - {{ $invoice->amount_minor }} {{ $invoice->currency }} ({{ $invoice->due_date?->toDateString() }})</option>
+                                                    <option value="{{ $invoice->getHashedIdAttribute() }}" @selected(old('invoice_id') === $invoice->getHashedIdAttribute())>{{ $invoice->customer_id }} - {{ number_format($invoice->amount_minor / 100, 2) }} {{ $invoice->currency }} ({{ $invoice->due_date?->toDateString() }})</option>
                                                 @endforeach
                                             </optgroup>
                                         @endforeach
                                     @else
                                         @foreach ($invoices as $invoice)
-                                            <option value="{{ $invoice->getHashedIdAttribute() }}" @selected(old('invoice_id') === $invoice->getHashedIdAttribute())>{{ $invoice->customer_id }} - {{ $invoice->amount_minor }} {{ $invoice->currency }} ({{ $invoice->due_date?->toDateString() }})</option>
+                                            <option value="{{ $invoice->getHashedIdAttribute() }}" @selected(old('invoice_id') === $invoice->getHashedIdAttribute())>{{ $invoice->customer_id }} - {{ number_format($invoice->amount_minor / 100, 2) }} {{ $invoice->currency }} ({{ $invoice->due_date?->toDateString() }})</option>
                                         @endforeach
                                     @endif
                                 </select>

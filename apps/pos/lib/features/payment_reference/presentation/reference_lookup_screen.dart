@@ -117,7 +117,7 @@ class _ReferenceLookupScreenState extends ConsumerState<ReferenceLookupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Amount due: ${reference.amount} ${reference.currency}'),
+                    Text('Amount due: ${Money.format(reference.amount, reference.currency)}'),
                     Text('Due date: ${reference.dueDate.toIso8601String()}'),
                     if (!isPending)
                       Text(
