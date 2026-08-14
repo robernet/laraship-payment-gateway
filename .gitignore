@@ -34,6 +34,11 @@ build/
 # ---- Graphify ----
 # Root graphify-out/ is committed on purpose (shared map); stale per-service copies are not:
 /backend/graphify-out/
+# Regenerable indexing cache + machine-local path pointer, not part of the shared map:
+/graphify-out/cache/
+
+# ---- Serena MCP ----
+.serena/
 
 # ---- Vendored UI kits (re-vendor per project; kept out of git) ----
 /reference/
