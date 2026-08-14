@@ -5,10 +5,17 @@ import '../models/transaction.dart';
 /// A logged-in POS operator's session: the bearer token (already persisted
 /// to [TokenStore] by the time this is returned) plus what it's scoped to.
 class PosSession {
-  const PosSession({required this.token, required this.abilities, required this.storeId});
+  const PosSession({
+    required this.token,
+    required this.abilities,
+    required this.branchId,
+    required this.storeId,
+  });
 
   final String token;
   final List<String> abilities;
+  final String branchId;
+  // Mirrors the API contract's response shape; not consumed by this app yet.
   final String storeId;
 }
 
@@ -16,7 +23,7 @@ class PosSession {
 /// Abstract so widget tests can substitute a hand-written fake instead of
 /// mocking HTTP — see `apps/pos/test/support/fake_payment_gateway_service.dart`.
 abstract class PaymentGatewayService {
-  Future<PosSession> login({required String email, required String password, required String storeId});
+  Future<PosSession> login({required String email, required String password, required String branchId});
 
   Future<PaymentReference> lookupReference(String reference);
 
@@ -26,7 +33,7 @@ abstract class PaymentGatewayService {
     required String currency,
   });
 
-  Future<Shift> openShift({required String storeId});
+  Future<Shift> openShift({required String branchId});
 
   Future<Shift> closeShift({required String shiftId, required int countedAmountMinor});
 }

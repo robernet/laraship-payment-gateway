@@ -18,6 +18,7 @@ class _SeededShiftNotifier extends ShiftNotifier {
 
 Shift _openShift() => Shift(
       id: 'sh1',
+      branchId: 'b1',
       storeId: 's1',
       operatorId: 'op1',
       openedAt: DateTime.parse('2026-08-04T12:00:00.000Z'),
@@ -28,6 +29,7 @@ void main() {
     final fake = FakePaymentGatewayService(
       closeShiftResult: Shift(
         id: 'sh1',
+        branchId: 'b1',
         storeId: 's1',
         operatorId: 'op1',
         openedAt: DateTime.parse('2026-08-04T12:00:00.000Z'),

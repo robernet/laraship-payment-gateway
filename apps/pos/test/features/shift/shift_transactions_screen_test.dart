@@ -26,6 +26,7 @@ void main() {
     );
     final shift = Shift(
       id: 'sh1',
+      branchId: 'b1',
       storeId: 's1',
       operatorId: 'op1',
       openedAt: DateTime.parse('2026-08-04T12:00:00.000Z'),
@@ -63,6 +64,7 @@ void main() {
   testWidgets('shows an empty state when nothing has been collected yet', (tester) async {
     final shift = Shift(
       id: 'sh1',
+      branchId: 'b1',
       storeId: 's1',
       operatorId: 'op1',
       openedAt: DateTime.parse('2026-08-04T12:00:00.000Z'),

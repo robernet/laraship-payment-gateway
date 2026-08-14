@@ -133,7 +133,8 @@ class BranchAuthTest extends TestCase
             'email' => 'unknown-branch-op@example.test',
             'password' => 'secret-password',
             'branch_id' => 'not-a-real-hashid',
-        ])->assertStatus(422);
+        ])->assertStatus(422)
+            ->assertJsonPath('errors.branch_id.0', 'This branch was not found.');
     }
 
     #[Test]

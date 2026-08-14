@@ -7,11 +7,11 @@ class AuthNotifier extends Notifier<PosSession?> {
   @override
   PosSession? build() => null;
 
-  Future<void> login({required String email, required String password, required String storeId}) async {
+  Future<void> login({required String email, required String password, required String branchId}) async {
     final session = await ref.read(paymentGatewayServiceProvider).login(
           email: email,
           password: password,
-          storeId: storeId,
+          branchId: branchId,
         );
     state = session;
   }

@@ -8,8 +8,10 @@ part of 'shift.dart';
 
 _Shift _$ShiftFromJson(Map<String, dynamic> json) => _Shift(
   id: json['id'] as String,
+  branchId: json['branch_id'] as String,
   storeId: json['store_id'] as String,
-  operatorId: json['operator_id'] as String,
+  operatorId: json['operator_id'] as String?,
+  posId: json['pos_id'] as String?,
   openedAt: DateTime.parse(json['opened_at'] as String),
   closedAt: json['closed_at'] == null
       ? null
@@ -20,8 +22,10 @@ _Shift _$ShiftFromJson(Map<String, dynamic> json) => _Shift(
 
 Map<String, dynamic> _$ShiftToJson(_Shift instance) => <String, dynamic>{
   'id': instance.id,
+  'branch_id': instance.branchId,
   'store_id': instance.storeId,
   'operator_id': instance.operatorId,
+  'pos_id': instance.posId,
   'opened_at': instance.openedAt.toIso8601String(),
   'closed_at': instance.closedAt?.toIso8601String(),
   'counted_amount_minor': instance.countedAmountMinor,

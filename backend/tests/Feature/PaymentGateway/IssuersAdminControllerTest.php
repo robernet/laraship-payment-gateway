@@ -84,4 +84,22 @@ class IssuersAdminControllerTest extends TestCase
             ->assertStatus(200)
             ->assertSee('Admin UI Issuer');
     }
+
+    #[Test]
+    public function issuer_layout_whose_segments_together_exceed_the_reference_budget_is_rejected()
+    {
+        // identifier_length (20) and amount_length (10) each pass their own max
+        // (22 and 15), but 20 + 10 + PREFIX(3) + SUB_ID(3) = 36 > 28, so no valid
+        // reference could ever be generated (IssuerRequest::after()).
+        $admin = $this->admin();
+
+        $response = $this->actingAs($admin)->post('/issuers', [
+            'name' => 'Overflowing Layout Issuer',
+            'sub_id' => 43,
+            'reference_layout' => ['identifier_length' => 20, 'amount_length' => 10],
+        ]);
+
+        $response->assertSessionHasErrors('reference_layout.identifier_length');
+        $this->assertDatabaseMissing('paymentgateway_issuers', ['name' => 'Overflowing Layout Issuer']);
+    }
 }

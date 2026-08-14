@@ -87,8 +87,8 @@ class PaymentReferenceRequest extends BaseRequest
             // with a null frequency, which would crash on now()->addDays(null).
             $rules = array_merge($rules, [
                 'autopay_enabled' => ['sometimes', 'boolean'],
-                'autopay_payment_number' => ['required_if:autopay_enabled,1', 'integer', 'min:1'],
-                'autopay_frequency_days' => ['required_if:autopay_enabled,1', 'integer', 'min:1'],
+                'autopay_payment_number' => ['nullable', 'required_if:autopay_enabled,1', 'integer', 'min:1'],
+                'autopay_frequency_days' => ['nullable', 'required_if:autopay_enabled,1', 'integer', 'min:1'],
             ]);
         }
 

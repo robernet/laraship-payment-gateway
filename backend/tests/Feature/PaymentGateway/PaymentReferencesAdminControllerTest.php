@@ -131,6 +131,36 @@ class PaymentReferencesAdminControllerTest extends TestCase
     }
 
     #[Test]
+    public function generating_from_an_invoice_succeeds_when_the_hidden_autopay_fields_are_submitted_blank()
+    {
+        // The create form's autopay_payment_number/autopay_frequency_days inputs are only
+        // visually hidden via jQuery .toggle() (create.blade.php) - they're still submitted
+        // as empty strings by a real browser even when autopay is unchecked. The global
+        // ConvertEmptyStringsToNull middleware turns those into null, but a present null
+        // value still runs through bare integer/min:1 rules without `nullable`, so this
+        // reproduces the real submission shape rather than the omitted-fields shape the
+        // other generate-from-invoice tests use.
+        $admin = $this->admin('blank-autopay');
+        $issuer = $this->issuer('blank-autopay');
+        $invoice = $this->unpaidInvoice($issuer, 'blank-autopay');
+
+        // An unchecked HTML checkbox is omitted by the browser entirely - only the
+        // always-present number inputs are simulated here.
+        $response = $this->actingAs($admin)->post('/payment-references', [
+            'invoice_id' => $invoice->getHashedIdAttribute(),
+            'autopay_payment_number' => '',
+            'autopay_frequency_days' => '',
+        ]);
+
+        $response->assertSessionDoesntHaveErrors();
+        $response->assertRedirect();
+        $this->assertDatabaseHas('paymentgateway_payment_references', [
+            'invoice_id' => $invoice->id,
+            'status' => 'pending',
+        ]);
+    }
+
+    #[Test]
     public function single_issuer_linked_user_sees_a_flat_invoice_list_and_can_generate()
     {
         $user = $this->nonPrivilegedUser('linked-single');

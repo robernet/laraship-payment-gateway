@@ -153,6 +153,13 @@ class CollectFlowTest extends TestCase
         $collect->assertStatus(200);
         $this->assertSame(15230, $collect->json('data.amount'));
 
+        // collected_at must be ISO 8601 (the Flutter client parses it as a DateTime;
+        // a human-formatted "10 Aug, 2026" throws a FormatException client-side).
+        $this->assertMatchesRegularExpression(
+            '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/',
+            $collect->json('data.collected_at')
+        );
+
         $this->assertDatabaseHas('paymentgateway_transactions', [
             'payment_reference_id' => PaymentReference::findByHash($paymentReferenceId)->id,
             'amount_minor' => 15230,
